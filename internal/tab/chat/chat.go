@@ -1,30 +1,27 @@
 package chat
 
 import (
+	"context"
+	"fmt"
+	"io"
 	"log"
+	"vado-client/internal/appcontext"
 	pb "vado-client/internal/pb/chat"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"google.golang.org/grpc"
 )
 
-func NewChat() {
-	// подключаемся к gRPC серверу
-	conn, err := grpc.Dial("localhost:50051", grpc.WithInsecure())
-	if err != nil {
-		log.Fatalf("не удалось подключиться: %v", err)
-	}
+func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
+	client := pb.NewChatServiceClient(appCtx.GRPC)
+	ctx, _ := context.WithCancel(context.Background())
 
-	client := pb.NewChatServiceClient(conn)
-	ctx, cancel := context.WithCancel(context.Background())
-
-	// При закрытии окна — корректно завершаем соединение
-	w.SetCloseIntercept(func() {
-		cancel()
-		conn.Close()
-		a.Quit()
-	})
+	//win.SetCloseIntercept(func() {
+	//	fmt.Println("CLOSE!")
+	//cancel()
+	//})
 
 	messages := widget.NewMultiLineEntry()
 	messages.Disable()
@@ -47,7 +44,7 @@ func NewChat() {
 			Text: text,
 		})
 		if err != nil {
-			log.Printf("Ошибка отправки: %v", err)
+			dialog.ShowError(err, appCtx.Win)
 			return
 		}
 		input.SetText("")
@@ -58,4 +55,30 @@ func NewChat() {
 		container.NewVBox(input, sendButton),
 		nil, nil,
 	)
+
+	// поток сообщений
+	go func() {
+		stream, err := client.ChatStream(ctx, &pb.Empty{})
+		if err != nil {
+			dialog.ShowError(err, appCtx.Win)
+			return
+		}
+
+		for {
+			msg, err := stream.Recv()
+			if err == io.EOF || ctx.Err() != nil {
+				break
+			}
+			if err != nil {
+				log.Printf("Ошибка получения: %v", err)
+				break
+			}
+			text := fmt.Sprintf("%s: %s\n", msg.User, msg.Text)
+			fyne.Do(func() {
+				messages.SetText(messages.Text + text)
+			})
+		}
+	}()
+
+	return content
 }

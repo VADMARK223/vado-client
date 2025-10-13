@@ -2,24 +2,23 @@ package hello
 
 import (
 	"context"
-	"fmt"
 	"time"
+	"vado-client/internal/appcontext"
 	"vado-client/internal/pb/hello"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 )
 
-func NewHelloBox() *fyne.Container {
+func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите имя")
 
 	label := widget.NewLabel("Пусто...")
 	button := widget.NewButton("Отправить", func() {
-		sendHello(label, input)
+		sendHello(ctx, label, input)
 	})
 
 	return container.NewVBox(
@@ -29,26 +28,15 @@ func NewHelloBox() *fyne.Container {
 	)
 }
 
-func sendHello(label *widget.Label, input *widget.Entry) {
-	conn, err := grpc.NewClient("localhost:50051",
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-	if err != nil {
-		label.SetText(fmt.Sprintf("Ошибка соединения: %v", err))
-		return
-	}
-	defer func(conn *grpc.ClientConn) {
-		_ = conn.Close()
-	}(conn)
-
-	client := hello.NewHelloServiceClient(conn)
+func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry) {
+	client := hello.NewHelloServiceClient(appCtx.GRPC)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	resp, err := client.SeyHello(ctx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
-		label.SetText(fmt.Sprintf("Ошибка запроса: %v", err))
+		dialog.ShowError(err, appCtx.Win)
 		return
 	}
 
