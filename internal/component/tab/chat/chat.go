@@ -60,7 +60,8 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	go func() {
 		stream, err := client.ChatStream(ctx, &pb.Empty{})
 		if err != nil {
-			dialog.ShowError(err, appCtx.Win)
+			appCtx.Log.Errorw("Ошибка создания потока", "error", err.Error())
+			//dialog.ShowInformation("Ошибка создания потока", err.Error(), appCtx.Win)
 			return
 		}
 

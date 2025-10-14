@@ -2,9 +2,9 @@ package tab
 
 import (
 	"vado-client/internal/appcontext"
-	"vado-client/internal/tab/chat"
-	"vado-client/internal/tab/hello"
-	"vado-client/internal/tab/login"
+	"vado-client/internal/component/tab/chat"
+	"vado-client/internal/component/tab/hello"
+	"vado-client/internal/component/tab/login"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"

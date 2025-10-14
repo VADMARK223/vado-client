@@ -22,9 +22,8 @@ func NewLogin(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 
 	authClient := pb.NewAuthServiceClient(appCtx.GRPC)
 
-	ctx := context.Background()
 	btn := widget.NewButton("Вход", func() {
-		resp, err := authClient.Login(ctx, &pb.LoginRequest{
+		resp, err := authClient.Login(context.Background(), &pb.LoginRequest{
 			Username: usernameInput.Text,
 			Password: passwordInput.Text,
 		})

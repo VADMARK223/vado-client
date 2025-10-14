@@ -1,18 +1,25 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"time"
 	"vado-client/internal/appcontext"
+	"vado-client/internal/component/common"
+	"vado-client/internal/component/tab"
 	"vado-client/internal/constants/code"
+	"vado-client/internal/constants/color"
+	client2 "vado-client/internal/grpc/client"
 	"vado-client/internal/logger"
-	"vado-client/internal/tab"
+	pbServer "vado-client/internal/pb/server"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
+	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/widget"
 	"go.uber.org/zap"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const Port = "50051"
@@ -21,7 +28,8 @@ func main() {
 	a := app.NewWithID("vado-client")
 	w := a.NewWindow("Vado client")
 
-	client, err := createClient(Port)
+	client, err := client2.CreateClient(Port)
+
 	if err != nil {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
 	}
@@ -37,14 +45,52 @@ func main() {
 
 	preferences := a.Preferences()
 	token := preferences.String(code.JwtToken)
-	w.SetContent(tab.NewTab(appCtx, a, token))
-	w.Resize(fyne.NewSize(400, 600))
 
+	userInfo := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", "VADMARK"))
+	bottomObjs := []fyne.CanvasObject{userInfo, layout.NewSpacer()}
+	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
+	bottomBar := container.NewHBox(bottomObjs...)
+	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a, token))
+	w.SetContent(root)
+	w.Resize(fyne.NewSize(700, 400))
 	w.SetCloseIntercept(func() {
 		closeWindow(appCtx, w)
 	})
-
 	w.ShowAndRun()
+}
+
+func getStatusServer(appCtx *appcontext.AppContext) bool {
+	serverClient := pbServer.NewServerServiceClient(appCtx.GRPC)
+	pingResp, errPing := serverClient.Ping(context.Background(), &emptypb.Empty{})
+
+	var result bool
+	if errPing != nil {
+		result = false
+	} else {
+		result = pingResp.Run
+	}
+
+	return result
+}
+
+func updateIndicatorColor(appCtx *appcontext.AppContext, indicator *common.Indicator) {
+	if getStatusServer(appCtx) {
+		indicator.SetFillColor(color.Green())
+	} else {
+		indicator.SetFillColor(color.Red())
+	}
+}
+
+func createServerStatus(appCtx *appcontext.AppContext) []fyne.CanvasObject {
+	fastModeTxt := widget.NewRichTextFromMarkdown("Server status:")
+	indicator := common.NewIndicator(color.Orange(), fyne.NewSize(10, 10))
+	refreshBtn := widget.NewButton("Обновить", func() {
+		updateIndicatorColor(appCtx, indicator)
+	})
+	updateIndicatorColor(appCtx, indicator)
+
+	box := container.NewHBox(fastModeTxt, container.NewCenter(indicator), refreshBtn)
+	return []fyne.CanvasObject{box}
 }
 
 func initLogger() *zap.SugaredLogger {
@@ -55,14 +101,6 @@ func initLogger() *zap.SugaredLogger {
 	defer func() { _ = zapLogger.Sync() }()
 
 	return zapLogger
-}
-
-func createClient(port string) (*grpc.ClientConn, error) {
-	conn, err := grpc.NewClient("localhost:"+port,
-		grpc.WithTransportCredentials(insecure.NewCredentials()),
-	)
-
-	return conn, err
 }
 
 func closeWindow(ctx *appcontext.AppContext, w fyne.Window) {
