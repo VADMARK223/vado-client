@@ -10,15 +10,16 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"google.golang.org/grpc/metadata"
 )
 
-func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
+func NewHelloBox(ctx *appcontext.AppContext, token string) *fyne.Container {
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите имя")
 
 	label := widget.NewLabel("Пусто...")
 	button := widget.NewButton("Отправить", func() {
-		sendHello(ctx, label, input)
+		sendHello(ctx, label, input, token)
 	})
 
 	return container.NewVBox(
@@ -28,13 +29,19 @@ func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 	)
 }
 
-func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry) {
+func withAuth(ctx context.Context, token string) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
+}
+
+func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry, token string) {
 	client := hello.NewHelloServiceClient(appCtx.GRPC)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	resp, err := client.SeyHello(ctx, &hello.HelloRequest{Name: input.Text})
+	appCtx.Log.Debugf("Send with token: %s", token)
+	authCtx := withAuth(ctx, token)
+	resp, err := client.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
 		dialog.ShowError(err, appCtx.Win)
 		return

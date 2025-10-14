@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 	"vado-client/internal/appcontext"
+	"vado-client/internal/constants/code"
 	"vado-client/internal/logger"
 	"vado-client/internal/tab"
 
@@ -34,7 +35,9 @@ func main() {
 		}
 	})
 
-	w.SetContent(tab.NewTab(appCtx))
+	preferences := a.Preferences()
+	token := preferences.String(code.JwtToken)
+	w.SetContent(tab.NewTab(appCtx, a, token))
 	w.Resize(fyne.NewSize(400, 600))
 
 	w.SetCloseIntercept(func() {

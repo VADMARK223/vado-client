@@ -4,14 +4,17 @@ import (
 	"vado-client/internal/appcontext"
 	"vado-client/internal/tab/chat"
 	"vado-client/internal/tab/hello"
+	"vado-client/internal/tab/login"
 
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 )
 
-func NewTab(ctx *appcontext.AppContext) *container.AppTabs {
+func NewTab(ctx *appcontext.AppContext, a fyne.App, token string) *container.AppTabs {
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Hello", hello.NewHelloBox(ctx)),
-		container.NewTabItem("Chat", chat.NewChat(ctx)),
+		container.NewTabItem("Логин", login.NewLogin(ctx, a)),
+		container.NewTabItem("Проверка", hello.NewHelloBox(ctx, token)),
+		container.NewTabItem("Чат", chat.NewChat(ctx)),
 	)
 	return tabs
 }
