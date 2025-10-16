@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 
-	pb "vado-client/internal/pb/auth"
+	pb "vado-client/api/pb/auth"
 )
 
 func NewLogin(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {

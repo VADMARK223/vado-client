@@ -3,8 +3,8 @@ package hello
 import (
 	"context"
 	"time"
+	"vado-client/api/pb/hello"
 	"vado-client/internal/appcontext"
-	"vado-client/internal/pb/hello"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"

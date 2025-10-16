@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"time"
+	pbServer "vado-client/api/pb/server"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/component/common"
 	"vado-client/internal/component/tab"
@@ -11,7 +12,6 @@ import (
 	"vado-client/internal/constants/color"
 	client2 "vado-client/internal/grpc/client"
 	"vado-client/internal/logger"
-	pbServer "vado-client/internal/pb/server"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"

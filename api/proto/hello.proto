@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "internal/pb/hello;hello";
+option go_package = "api/pb/hello;hello";
 
 service HelloService {
   rpc SeyHello(HelloRequest) returns (HelloResponse);

@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.10
 // 	protoc        v3.21.12
-// source: internal/proto/server.proto
+// source: api/proto/server.proto
 
 package server
 
@@ -31,7 +31,7 @@ type ServerResponse struct {
 
 func (x *ServerResponse) Reset() {
 	*x = ServerResponse{}
-	mi := &file_internal_proto_server_proto_msgTypes[0]
+	mi := &file_api_proto_server_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +43,7 @@ func (x *ServerResponse) String() string {
 func (*ServerResponse) ProtoMessage() {}
 
 func (x *ServerResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_internal_proto_server_proto_msgTypes[0]
+	mi := &file_api_proto_server_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +56,7 @@ func (x *ServerResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ServerResponse.ProtoReflect.Descriptor instead.
 func (*ServerResponse) Descriptor() ([]byte, []int) {
-	return file_internal_proto_server_proto_rawDescGZIP(), []int{0}
+	return file_api_proto_server_proto_rawDescGZIP(), []int{0}
 }
 
 func (x *ServerResponse) GetRun() bool {
@@ -66,34 +66,34 @@ func (x *ServerResponse) GetRun() bool {
 	return false
 }
 
-var File_internal_proto_server_proto protoreflect.FileDescriptor
+var File_api_proto_server_proto protoreflect.FileDescriptor
 
-const file_internal_proto_server_proto_rawDesc = "" +
+const file_api_proto_server_proto_rawDesc = "" +
 	"\n" +
-	"\x1binternal/proto/server.proto\x1a\x1bgoogle/protobuf/empty.proto\"\"\n" +
+	"\x16api/proto/server.proto\x1a\x1bgoogle/protobuf/empty.proto\"\"\n" +
 	"\x0eServerResponse\x12\x10\n" +
 	"\x03run\x18\x01 \x01(\bR\x03run2@\n" +
 	"\rServerService\x12/\n" +
-	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x0f.ServerResponseB\x1bZ\x19internal/pb/server;serverb\x06proto3"
+	"\x04Ping\x12\x16.google.protobuf.Empty\x1a\x0f.ServerResponseB\x16Z\x14api/pb/server;serverb\x06proto3"
 
 var (
-	file_internal_proto_server_proto_rawDescOnce sync.Once
-	file_internal_proto_server_proto_rawDescData []byte
+	file_api_proto_server_proto_rawDescOnce sync.Once
+	file_api_proto_server_proto_rawDescData []byte
 )
 
-func file_internal_proto_server_proto_rawDescGZIP() []byte {
-	file_internal_proto_server_proto_rawDescOnce.Do(func() {
-		file_internal_proto_server_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_internal_proto_server_proto_rawDesc), len(file_internal_proto_server_proto_rawDesc)))
+func file_api_proto_server_proto_rawDescGZIP() []byte {
+	file_api_proto_server_proto_rawDescOnce.Do(func() {
+		file_api_proto_server_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_api_proto_server_proto_rawDesc), len(file_api_proto_server_proto_rawDesc)))
 	})
-	return file_internal_proto_server_proto_rawDescData
+	return file_api_proto_server_proto_rawDescData
 }
 
-var file_internal_proto_server_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
-var file_internal_proto_server_proto_goTypes = []any{
+var file_api_proto_server_proto_msgTypes = make([]protoimpl.MessageInfo, 1)
+var file_api_proto_server_proto_goTypes = []any{
 	(*ServerResponse)(nil), // 0: ServerResponse
 	(*emptypb.Empty)(nil),  // 1: google.protobuf.Empty
 }
-var file_internal_proto_server_proto_depIdxs = []int32{
+var file_api_proto_server_proto_depIdxs = []int32{
 	1, // 0: ServerService.Ping:input_type -> google.protobuf.Empty
 	0, // 1: ServerService.Ping:output_type -> ServerResponse
 	1, // [1:2] is the sub-list for method output_type
@@ -103,26 +103,26 @@ var file_internal_proto_server_proto_depIdxs = []int32{
 	0, // [0:0] is the sub-list for field type_name
 }
 
-func init() { file_internal_proto_server_proto_init() }
-func file_internal_proto_server_proto_init() {
-	if File_internal_proto_server_proto != nil {
+func init() { file_api_proto_server_proto_init() }
+func file_api_proto_server_proto_init() {
+	if File_api_proto_server_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_internal_proto_server_proto_rawDesc), len(file_internal_proto_server_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_api_proto_server_proto_rawDesc), len(file_api_proto_server_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_internal_proto_server_proto_goTypes,
-		DependencyIndexes: file_internal_proto_server_proto_depIdxs,
-		MessageInfos:      file_internal_proto_server_proto_msgTypes,
+		GoTypes:           file_api_proto_server_proto_goTypes,
+		DependencyIndexes: file_api_proto_server_proto_depIdxs,
+		MessageInfos:      file_api_proto_server_proto_msgTypes,
 	}.Build()
-	File_internal_proto_server_proto = out.File
-	file_internal_proto_server_proto_goTypes = nil
-	file_internal_proto_server_proto_depIdxs = nil
+	File_api_proto_server_proto = out.File
+	file_api_proto_server_proto_goTypes = nil
+	file_api_proto_server_proto_depIdxs = nil
 }

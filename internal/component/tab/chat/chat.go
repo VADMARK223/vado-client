@@ -5,16 +5,21 @@ import (
 	"fmt"
 	"io"
 	"log"
+	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
-	pb "vado-client/internal/pb/chat"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
+	"google.golang.org/grpc/metadata"
 )
 
-func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
+func withAuth(ctx context.Context, token string) context.Context {
+	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
+}
+
+func NewChat(appCtx *appcontext.AppContext, token string) *fyne.Container {
 	client := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, _ := context.WithCancel(context.Background())
 
@@ -39,7 +44,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 			return
 		}
 
-		_, err := client.SendMessage(ctx, &pb.ChatMessage{
+		appCtx.Log.Debugf("Send with token: %s", token)
+		authCtx := withAuth(ctx, token)
+		_, err := client.SendMessage(authCtx, &pb.ChatMessage{
 			User: user,
 			Text: text,
 		})

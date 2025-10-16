@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "internal/pb/chat;chat";
+option go_package = "api/pb/chat;chat";
 
 service ChatService {
   rpc SendMessage (ChatMessage) returns (Empty);

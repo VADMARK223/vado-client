@@ -14,7 +14,7 @@ func NewTab(ctx *appcontext.AppContext, a fyne.App, token string) *container.App
 	tabs := container.NewAppTabs(
 		container.NewTabItem("Логин", login.NewLogin(ctx, a)),
 		container.NewTabItem("Проверка", hello.NewHelloBox(ctx, token)),
-		container.NewTabItem("Чат", chat.NewChat(ctx)),
+		container.NewTabItem("Чат", chat.NewChat(ctx, token)),
 	)
 	return tabs
 }
