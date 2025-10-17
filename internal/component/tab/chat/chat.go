@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"strings"
 	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
@@ -13,6 +12,7 @@ import (
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"google.golang.org/grpc/metadata"
@@ -26,8 +26,42 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, cancel := context.WithCancel(context.Background())
 
-	messages := widget.NewMultiLineEntry()
-	messages.Disable()
+	controlBox := container.NewHBox(widget.NewButton("1", func() {}), widget.NewButton("2", func() {}))
+	controlBox.Hide()
+	loginBtn := widget.NewButton("Вход", func() {
+		userInfo.ShowLoginDialog(appCtx, nil)
+	})
+
+	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
+
+	topBox := container.NewVBox(controlBox, userNameText)
+
+	messages := binding.NewUntypedList()
+	/*_ = messages.Set([]interface{}{
+		"apple",
+		"banana",
+		"cherry",
+		"cherry1",
+		"cherry2",
+		"cherry43",
+		"cherry5",
+		"cherry6",
+		"cherry7",
+		"cherry8",
+		"cherry9",
+	})*/
+	list := widget.NewListWithData(
+		messages,
+		func() fyne.CanvasObject { return NewMessageItem() },
+		func(item binding.DataItem, obj fyne.CanvasObject) {
+			str, _ := item.(binding.Untyped).Get()
+			//obj.(*widget.Label).SetText(str.(string))
+
+			messageItem := obj.(*MessageItem)
+			messageItem.SetData(str.(string))
+		})
+
+	scroll := container.NewVScroll(list)
 
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Сообщение...")
@@ -41,43 +75,28 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 		token := client.GetToken(appCtx.App)
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
-		_, err := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
+		_, errSendMessage := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
 			User: client.GetUsername(appCtx.App),
 			Text: text,
 		})
-		if err != nil {
-			dialog.ShowError(err, appCtx.Win)
+		if errSendMessage != nil {
+			dialog.ShowError(errSendMessage, appCtx.Win)
 			return
 		}
 		input.SetText("")
 	})
 
-	loginBtn := widget.NewButton("Вход", func() {
-		userInfo.ShowLoginDialog(appCtx, nil)
-	})
-
 	updateButtons(appCtx.App, sendButton, loginBtn)
 
-	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
-	appCtx.App.Preferences().AddChangeListener(func() {
-		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
-		userNameText.Refresh()
-		updateButtons(appCtx.App, sendButton, loginBtn)
-	})
+	bottomBox := container.NewVBox(input, sendButton)
 
-	content := container.NewBorder(
-		container.NewVBox(userNameText, messages),
-		container.NewVBox(input, sendButton, loginBtn),
-		nil, nil,
-	)
+	content := container.NewBorder(topBox, bottomBox, nil, nil, scroll)
 
 	// Поток сообщений
 	go func() {
-		defer cancel() // безопасность — отмена при выходе из горутины
-		var builder strings.Builder
+		defer cancel()
 
 		for {
-			fmt.Println("TICK")
 			if ctx.Err() != nil {
 				return
 			}
@@ -85,9 +104,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 			token := client.GetToken(appCtx.App)
 			authCtx := withAuth(ctx, token)
 
-			stream, err := clientGRPC.ChatStream(authCtx, &pb.Empty{})
-			if err != nil {
-				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", err)
+			stream, errStream := clientGRPC.ChatStream(authCtx, &pb.Empty{})
+			if errStream != nil {
+				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
 				time.Sleep(2 * time.Second)
 				continue
 			}
@@ -105,10 +124,11 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 					break
 				}
 
-				builder.WriteString(fmt.Sprintf("%s: %s\n", msg.User, msg.Text))
-
 				fyne.Do(func() {
-					messages.SetText(builder.String())
+					errAppend := messages.Append(msg.Text)
+					if errAppend != nil {
+						appCtx.Log.Errorw("Error append message", "error", errAppend)
+					}
 				})
 			}
 
@@ -116,6 +136,12 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 			time.Sleep(2 * time.Second)
 		}
 	}()
+
+	appCtx.App.Preferences().AddChangeListener(func() {
+		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
+		userNameText.Refresh()
+		updateButtons(appCtx.App, sendButton, loginBtn)
+	})
 
 	appCtx.AddCloseHandler(func() {
 		cancel()
