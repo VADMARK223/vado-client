@@ -8,7 +8,6 @@ import (
 	"vado-client/internal/appcontext"
 	"vado-client/internal/component/common"
 	"vado-client/internal/component/tab"
-	"vado-client/internal/constants/code"
 	"vado-client/internal/constants/color"
 	client2 "vado-client/internal/grpc/client"
 	"vado-client/internal/logger"
@@ -43,14 +42,11 @@ func main() {
 		}
 	})
 
-	preferences := a.Preferences()
-	token := preferences.String(code.JwtToken)
-
 	userInfo := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", "VADMARK"))
 	bottomObjs := []fyne.CanvasObject{userInfo, layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
 	bottomBar := container.NewHBox(bottomObjs...)
-	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a, token))
+	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a))
 	w.SetContent(root)
 	w.Resize(fyne.NewSize(700, 400))
 	w.SetCloseIntercept(func() {

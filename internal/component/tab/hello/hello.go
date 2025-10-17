@@ -5,6 +5,7 @@ import (
 	"time"
 	"vado-client/api/pb/hello"
 	"vado-client/internal/appcontext"
+	"vado-client/internal/grpc/client"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -13,13 +14,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func NewHelloBox(ctx *appcontext.AppContext, token string) *fyne.Container {
+func NewHelloBox(ctx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите имя")
 
 	label := widget.NewLabel("Пусто...")
 	button := widget.NewButton("Отправить", func() {
-		sendHello(ctx, label, input, token)
+		sendHello(ctx, label, input, client.GetToken(a))
 	})
 
 	return container.NewVBox(
@@ -43,7 +44,7 @@ func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget
 	authCtx := withAuth(ctx, token)
 	resp, err := client.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
-		dialog.ShowError(err, appCtx.Win)
+		dialog.ShowInformation("Ошибка токена", err.Error(), appCtx.Win)
 		return
 	}
 

@@ -7,6 +7,7 @@ import (
 	"log"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
+	client2 "vado-client/internal/grpc/client"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -19,7 +20,7 @@ func withAuth(ctx context.Context, token string) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
 }
 
-func NewChat(appCtx *appcontext.AppContext, token string) *fyne.Container {
+func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	client := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, _ := context.WithCancel(context.Background())
 
@@ -43,7 +44,7 @@ func NewChat(appCtx *appcontext.AppContext, token string) *fyne.Container {
 		if user == "" || text == "" {
 			return
 		}
-
+		token := client2.GetToken(a)
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
 		_, err := client.SendMessage(authCtx, &pb.ChatMessage{

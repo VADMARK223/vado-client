@@ -4,6 +4,7 @@ import (
 	"context"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/constants/code"
+	"vado-client/internal/grpc/client"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -22,14 +23,14 @@ func NewLogin(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 
 	authClient := pb.NewAuthServiceClient(appCtx.GRPC)
 
-	btn := widget.NewButton("Вход", func() {
+	enterBtn := widget.NewButton("Вход", func() {
 		resp, err := authClient.Login(context.Background(), &pb.LoginRequest{
 			Username: usernameInput.Text,
 			Password: passwordInput.Text,
 		})
 
 		if err != nil {
-			dialog.ShowError(err, appCtx.Win)
+			dialog.ShowInformation("Ошибка входа", err.Error(), appCtx.Win)
 			return
 		}
 
@@ -38,5 +39,9 @@ func NewLogin(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 		prefs.SetString(code.JwtToken, resp.Token)
 	})
 
-	return container.NewVBox(usernameInput, passwordInput, btn)
+	quitBtn := widget.NewButton("Выход", func() {
+		client.ResetToken(a)
+	})
+
+	return container.NewVBox(usernameInput, passwordInput, enterBtn, quitBtn)
 }
