@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 	pbServer "vado-client/api/pb/server"
 	"vado-client/internal/appcontext"
@@ -22,13 +23,14 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const Port = "50051"
+const PortGRPC = "50051"
 
 func main() {
-	a := app.NewWithID("vado-client")
-	w := a.NewWindow("Vado client")
+	envAppID := os.Getenv("APP_ID")
+	a := newApp(envAppID)
+	w := newWindow(a, envAppID)
 
-	clientGPRC, err := client.CreateClient(Port)
+	clientGPRC, err := client.CreateClient(PortGRPC)
 
 	if err != nil {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
@@ -48,11 +50,32 @@ func main() {
 	bottomBar := container.NewHBox(bottomObjs...)
 	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a))
 	w.SetContent(root)
-	w.Resize(fyne.NewSize(700, 400))
 	w.SetCloseIntercept(func() {
 		closeWindow(appCtx, w)
 	})
 	w.ShowAndRun()
+}
+
+func newApp(envAppID string) fyne.App {
+	var appID string
+	if envAppID == "" {
+		appID = "vado-client"
+	} else {
+		appID = fmt.Sprintf("vado-client-%s", envAppID)
+	}
+	return app.NewWithID(appID)
+}
+
+func newWindow(a fyne.App, envAppID string) fyne.Window {
+	var title string
+	if envAppID == "" {
+		title = "Vado client (Single)"
+	} else {
+		title = fmt.Sprintf("Vado client (%s)", envAppID)
+	}
+	w := a.NewWindow(title)
+	w.Resize(fyne.NewSize(450, 400))
+	return w
 }
 
 func getStatusServer(appCtx *appcontext.AppContext) bool {

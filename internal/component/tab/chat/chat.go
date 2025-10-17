@@ -7,7 +7,8 @@ import (
 	"log"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
-	client2 "vado-client/internal/grpc/client"
+	"vado-client/internal/component/userInfo"
+	"vado-client/internal/grpc/client"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -21,7 +22,7 @@ func withAuth(ctx context.Context, token string) context.Context {
 }
 
 func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
-	client := pb.NewChatServiceClient(appCtx.GRPC)
+	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, _ := context.WithCancel(context.Background())
 
 	//win.SetCloseIntercept(func() {
@@ -32,23 +33,16 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	messages := widget.NewMultiLineEntry()
 	messages.Disable()
 
-	nameEntry := widget.NewEntry()
-	nameEntry.SetPlaceHolder("Ваше имя")
-
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Сообщение...")
 
 	sendButton := widget.NewButton("Отправить", func() {
-		user := nameEntry.Text
 		text := input.Text
-		if user == "" || text == "" {
-			return
-		}
-		token := client2.GetToken(a)
+		token := client.GetToken(a)
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
-		_, err := client.SendMessage(authCtx, &pb.ChatMessage{
-			User: user,
+		_, err := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
+			User: client.GetUsername(a),
 			Text: text,
 		})
 		if err != nil {
@@ -58,15 +52,28 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 		input.SetText("")
 	})
 
+	loginBtn := widget.NewButton("Вход", func() {
+		userInfo.ShowLoginDialog(appCtx, a, nil)
+	})
+
+	updateButtons(a, sendButton, loginBtn)
+
+	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(a)))
+	a.Preferences().AddChangeListener(func() {
+		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(a)))
+		userNameText.Refresh()
+		updateButtons(a, sendButton, loginBtn)
+	})
+
 	content := container.NewBorder(
-		container.NewVBox(nameEntry, messages),
-		container.NewVBox(input, sendButton),
+		container.NewVBox(userNameText, messages),
+		container.NewVBox(input, sendButton, loginBtn),
 		nil, nil,
 	)
 
 	// поток сообщений
 	go func() {
-		stream, err := client.ChatStream(ctx, &pb.Empty{})
+		stream, err := clientGRPC.ChatStream(ctx, &pb.Empty{})
 		if err != nil {
 			appCtx.Log.Errorw("Ошибка создания потока", "error", err.Error())
 			//dialog.ShowInformation("Ошибка создания потока", err.Error(), appCtx.Win)
@@ -90,4 +97,14 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	}()
 
 	return content
+}
+
+func updateButtons(a fyne.App, sendBtn *widget.Button, loginBtn *widget.Button) {
+	if client.IsAuth(a) {
+		sendBtn.Show()
+		loginBtn.Hide()
+	} else {
+		sendBtn.Hide()
+		loginBtn.Show()
+	}
 }

@@ -15,7 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f func(token string)) {
+func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Введите логин")
 
@@ -39,7 +39,10 @@ func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f func(token str
 		prefs.SetString(code.JwtToken, resp.Token)
 		prefs.SetString(code.Username, resp.Username)
 
-		f(resp.Token)
+		if f != nil {
+			(*f)(resp.Token)
+		}
+
 		dlg.Hide()
 	})
 	doneBtn.Importance = widget.HighImportance

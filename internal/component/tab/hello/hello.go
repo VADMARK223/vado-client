@@ -19,7 +19,7 @@ func NewHelloBox(ctx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	input.SetPlaceHolder("Введите имя")
 
 	label := widget.NewLabel("Пусто...")
-	button := widget.NewButton("Отправить", func() {
+	button := widget.NewButton("Поздороваться", func() {
 		sendHello(ctx, label, input, client.GetToken(a))
 	})
 
