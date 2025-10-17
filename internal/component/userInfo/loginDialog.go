@@ -15,7 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f *func(token string)) {
+func ShowLoginDialog(appCtx *appcontext.AppContext, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Введите логин")
 
@@ -35,7 +35,7 @@ func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f *func(token st
 			return
 		}
 
-		prefs := a.Preferences()
+		prefs := appCtx.App.Preferences()
 		prefs.SetString(code.JwtToken, resp.Token)
 		prefs.SetString(code.Username, resp.Username)
 
@@ -67,7 +67,7 @@ func ShowLoginDialog(appCtx *appcontext.AppContext, a fyne.App, f *func(token st
 
 	content := container.NewVBox(form, container.NewHBox(layout.NewSpacer(), cancelBtn, doneBtn))
 
-	dlg = dialog.NewCustomWithoutButtons("Вход", content, a.Driver().AllWindows()[0])
+	dlg = dialog.NewCustomWithoutButtons("Вход", content, appCtx.Win)
 	dlg.Resize(fyne.NewSize(400, 180))
 	dlg.Show()
 

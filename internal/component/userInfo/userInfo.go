@@ -10,10 +10,10 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func CreateUserInfo(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
-	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(a)))
-	a.Preferences().AddChangeListener(func() {
-		userNameText.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(a)))
+func CreateUserInfo(appCtx *appcontext.AppContext) *fyne.Container {
+	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(appCtx.App)))
+	appCtx.App.Preferences().AddChangeListener(func() {
+		userNameText.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(appCtx.App)))
 		userNameText.Refresh()
 	})
 
@@ -21,17 +21,17 @@ func CreateUserInfo(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 		callBack := func(token string) {
 			appCtx.Log.Debugw("Create token", "token", token)
 		}
-		ShowLoginDialog(appCtx, a, &callBack)
+		ShowLoginDialog(appCtx, &callBack)
 	})
 
 	quitBtn := widget.NewButton("Выход", func() {
-		client.Logout(a)
+		client.Logout(appCtx.App)
 	})
 
-	updateVisibility(a, enterBtn, quitBtn)
+	updateVisibility(appCtx.App, enterBtn, quitBtn)
 
-	a.Preferences().AddChangeListener(func() {
-		updateVisibility(a, enterBtn, quitBtn)
+	appCtx.App.Preferences().AddChangeListener(func() {
+		updateVisibility(appCtx.App, enterBtn, quitBtn)
 	})
 
 	return container.NewHBox(userNameText, enterBtn, quitBtn)

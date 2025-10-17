@@ -21,14 +21,9 @@ func withAuth(ctx context.Context, token string) context.Context {
 	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
 }
 
-func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
+func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
-	ctx, _ := context.WithCancel(context.Background())
-
-	//win.SetCloseIntercept(func() {
-	//	fmt.Println("CLOSE!")
-	//cancel()
-	//})
+	ctx, cancel := context.WithCancel(context.Background())
 
 	messages := widget.NewMultiLineEntry()
 	messages.Disable()
@@ -38,11 +33,15 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 
 	sendButton := widget.NewButton("Отправить", func() {
 		text := input.Text
-		token := client.GetToken(a)
+		if text == "" {
+			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
+			return
+		}
+		token := client.GetToken(appCtx.App)
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
 		_, err := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
-			User: client.GetUsername(a),
+			User: client.GetUsername(appCtx.App),
 			Text: text,
 		})
 		if err != nil {
@@ -53,16 +52,16 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 	})
 
 	loginBtn := widget.NewButton("Вход", func() {
-		userInfo.ShowLoginDialog(appCtx, a, nil)
+		userInfo.ShowLoginDialog(appCtx, nil)
 	})
 
-	updateButtons(a, sendButton, loginBtn)
+	updateButtons(appCtx.App, sendButton, loginBtn)
 
-	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(a)))
-	a.Preferences().AddChangeListener(func() {
-		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(a)))
+	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
+	appCtx.App.Preferences().AddChangeListener(func() {
+		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
 		userNameText.Refresh()
-		updateButtons(a, sendButton, loginBtn)
+		updateButtons(appCtx.App, sendButton, loginBtn)
 	})
 
 	content := container.NewBorder(
@@ -71,7 +70,7 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 		nil, nil,
 	)
 
-	// поток сообщений
+	// Поток сообщений
 	go func() {
 		stream, err := clientGRPC.ChatStream(ctx, &pb.Empty{})
 		if err != nil {
@@ -95,6 +94,10 @@ func NewChat(appCtx *appcontext.AppContext, a fyne.App) *fyne.Container {
 			})
 		}
 	}()
+
+	appCtx.AddCloseHandler(func() {
+		cancel()
+	})
 
 	return content
 }

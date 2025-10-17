@@ -36,23 +36,14 @@ func main() {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
 	}
 
-	appCtx := appcontext.NewAppContext(initLogger(), clientGPRC, w)
+	appCtx := appcontext.NewAppContext(initLogger(), clientGPRC, a, w)
 	appCtx.Log.Infow("Start vado-client.", "time", time.Now().Format("2006-01-02 15:04:05"))
 
-	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
-		if k.Name == fyne.KeyEscape {
-			closeWindow(appCtx, w)
-		}
-	})
-
-	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx, a), layout.NewSpacer()}
+	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx), layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
 	bottomBar := container.NewHBox(bottomObjs...)
-	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a))
+	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx))
 	w.SetContent(root)
-	w.SetCloseIntercept(func() {
-		closeWindow(appCtx, w)
-	})
 	w.ShowAndRun()
 }
 
@@ -120,9 +111,4 @@ func initLogger() *zap.SugaredLogger {
 	defer func() { _ = zapLogger.Sync() }()
 
 	return zapLogger
-}
-
-func closeWindow(ctx *appcontext.AppContext, w fyne.Window) {
-	_ = ctx.GRPC.Close()
-	w.Close()
 }

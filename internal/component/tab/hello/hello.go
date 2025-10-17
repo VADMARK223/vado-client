@@ -14,13 +14,13 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-func NewHelloBox(ctx *appcontext.AppContext, a fyne.App) *fyne.Container {
+func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите имя")
 
 	label := widget.NewLabel("Пусто...")
 	button := widget.NewButton("Поздороваться", func() {
-		sendHello(ctx, label, input, client.GetToken(a))
+		sendHello(ctx, label, input, client.GetToken(ctx.App))
 	})
 
 	return container.NewVBox(
@@ -35,14 +35,14 @@ func withAuth(ctx context.Context, token string) context.Context {
 }
 
 func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry, token string) {
-	client := hello.NewHelloServiceClient(appCtx.GRPC)
+	clientGRPC := hello.NewHelloServiceClient(appCtx.GRPC)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
 	appCtx.Log.Debugf("Send with token: %s", token)
 	authCtx := withAuth(ctx, token)
-	resp, err := client.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
+	resp, err := clientGRPC.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
 		dialog.ShowInformation("Ошибка токена", err.Error(), appCtx.Win)
 		return
