@@ -37,28 +37,17 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	topBox := container.NewVBox(controlBox, userNameText)
 
 	messages := binding.NewUntypedList()
-	/*_ = messages.Set([]interface{}{
-		"apple",
-		"banana",
-		"cherry",
-		"cherry1",
-		"cherry2",
-		"cherry43",
-		"cherry5",
-		"cherry6",
-		"cherry7",
-		"cherry8",
-		"cherry9",
-	})*/
 	list := widget.NewListWithData(
 		messages,
 		func() fyne.CanvasObject { return NewMessageItem() },
 		func(item binding.DataItem, obj fyne.CanvasObject) {
 			str, _ := item.(binding.Untyped).Get()
-			//obj.(*widget.Label).SetText(str.(string))
 
 			messageItem := obj.(*MessageItem)
-			messageItem.SetData(str.(string))
+			messageData := str.(*pb.ChatMessage)
+
+			isMyMessage := messageData.Id == client.GetUserID(appCtx.App)
+			messageItem.SetData(messageData, isMyMessage)
 		})
 
 	scroll := container.NewVScroll(list)
@@ -75,7 +64,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 		token := client.GetToken(appCtx.App)
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
+
 		_, errSendMessage := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
+			Id:   client.GetUserID(appCtx.App),
 			User: client.GetUsername(appCtx.App),
 			Text: text,
 		})
@@ -125,7 +116,7 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 				}
 
 				fyne.Do(func() {
-					errAppend := messages.Append(msg.Text)
+					errAppend := messages.Append(msg)
 					if errAppend != nil {
 						appCtx.Log.Errorw("Error append message", "error", errAppend)
 					}

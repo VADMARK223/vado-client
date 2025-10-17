@@ -2,6 +2,7 @@ package userInfo
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 	pb "vado-client/api/pb/auth"
@@ -38,6 +39,7 @@ func ShowLoginDialog(appCtx *appcontext.AppContext, f *func(token string)) {
 		prefs := appCtx.App.Preferences()
 		prefs.SetString(code.JwtToken, resp.Token)
 		prefs.SetString(code.Username, resp.Username)
+		prefs.SetString(code.Id, strconv.FormatUint(resp.Id, 10))
 
 		if f != nil {
 			(*f)(resp.Token)

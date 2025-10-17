@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"strconv"
 	"vado-client/internal/constants/code"
 
 	"fyne.io/fyne/v2"
@@ -33,6 +34,16 @@ func Logout(a fyne.App) {
 	preferences := a.Preferences()
 	preferences.RemoveValue(code.JwtToken)
 	preferences.RemoveValue(code.Username)
+	preferences.RemoveValue(code.Id)
+}
+
+func GetUserID(a fyne.App) uint64 {
+	preferences := a.Preferences()
+	userID, parseUintErr := strconv.ParseUint(preferences.String(code.Id), 10, 64)
+	if parseUintErr != nil {
+		panic(parseUintErr)
+	}
+	return userID
 }
 
 func GetUsername(a fyne.App) string {
