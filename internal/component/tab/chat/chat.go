@@ -4,7 +4,8 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"log"
+	"strings"
+	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/component/userInfo"
@@ -72,26 +73,47 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 
 	// Поток сообщений
 	go func() {
-		stream, err := clientGRPC.ChatStream(ctx, &pb.Empty{})
-		if err != nil {
-			appCtx.Log.Errorw("Ошибка создания потока", "error", err.Error())
-			//dialog.ShowInformation("Ошибка создания потока", err.Error(), appCtx.Win)
-			return
-		}
+		defer cancel() // безопасность — отмена при выходе из горутины
+		var builder strings.Builder
 
 		for {
-			msg, err := stream.Recv()
-			if err == io.EOF || ctx.Err() != nil {
-				break
+			fmt.Println("TICK")
+			if ctx.Err() != nil {
+				return
 			}
+
+			token := client.GetToken(appCtx.App)
+			authCtx := withAuth(ctx, token)
+
+			stream, err := clientGRPC.ChatStream(authCtx, &pb.Empty{})
 			if err != nil {
-				log.Printf("Ошибка получения: %v", err)
-				break
+				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", err)
+				time.Sleep(2 * time.Second)
+				continue
 			}
-			text := fmt.Sprintf("%s: %s\n", msg.User, msg.Text)
-			fyne.Do(func() {
-				messages.SetText(messages.Text + text)
-			})
+
+			appCtx.Log.Infow("Подключен к потоку сообщений")
+
+			for {
+				msg, err := stream.Recv()
+				if err == io.EOF || ctx.Err() != nil {
+					appCtx.Log.Infow("Завершение потока")
+					break
+				}
+				if err != nil {
+					appCtx.Log.Errorw("Ошибка получения сообщения", "error", err)
+					break
+				}
+
+				builder.WriteString(fmt.Sprintf("%s: %s\n", msg.User, msg.Text))
+
+				fyne.Do(func() {
+					messages.SetText(builder.String())
+				})
+			}
+
+			// Если был обрыв — попробуем переподключиться через 2 секунды
+			time.Sleep(2 * time.Second)
 		}
 	}()
 
