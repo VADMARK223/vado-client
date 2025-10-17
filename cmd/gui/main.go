@@ -8,8 +8,9 @@ import (
 	"vado-client/internal/appcontext"
 	"vado-client/internal/component/common"
 	"vado-client/internal/component/tab"
+	"vado-client/internal/component/userInfo"
 	"vado-client/internal/constants/color"
-	client2 "vado-client/internal/grpc/client"
+	"vado-client/internal/grpc/client"
 	"vado-client/internal/logger"
 
 	"fyne.io/fyne/v2"
@@ -27,13 +28,13 @@ func main() {
 	a := app.NewWithID("vado-client")
 	w := a.NewWindow("Vado client")
 
-	client, err := client2.CreateClient(Port)
+	clientGPRC, err := client.CreateClient(Port)
 
 	if err != nil {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
 	}
 
-	appCtx := appcontext.NewAppContext(initLogger(), client, w)
+	appCtx := appcontext.NewAppContext(initLogger(), clientGPRC, w)
 	appCtx.Log.Infow("Start vado-client.", "time", time.Now().Format("2006-01-02 15:04:05"))
 
 	w.Canvas().SetOnTypedKey(func(k *fyne.KeyEvent) {
@@ -42,8 +43,7 @@ func main() {
 		}
 	})
 
-	userInfo := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", "VADMARK"))
-	bottomObjs := []fyne.CanvasObject{userInfo, layout.NewSpacer()}
+	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx, a), layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
 	bottomBar := container.NewHBox(bottomObjs...)
 	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx, a))

@@ -29,7 +29,21 @@ func GetToken(a fyne.App) string {
 	return token
 }
 
-func ResetToken(a fyne.App) {
+func Logout(a fyne.App) {
 	preferences := a.Preferences()
 	preferences.RemoveValue(code.JwtToken)
+	preferences.RemoveValue(code.Username)
+}
+
+func GetUsername(a fyne.App) string {
+	preferences := a.Preferences()
+	username := preferences.String(code.Username)
+	if username != "" {
+		return username
+	}
+	return "Гость"
+}
+
+func IsAuth(a fyne.App) bool {
+	return GetToken(a) != ""
 }
