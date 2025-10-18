@@ -11,42 +11,73 @@ import (
 
 type MessageItem struct {
 	widget.BaseWidget
-
-	username *widget.Label
-	message  *widget.Label
-	content  *fyne.Container
-	spacer   fyne.CanvasObject
+	usernameLbl *widget.Label
+	timeLbl     *widget.Label
+	messageLbl  *widget.Label
+	isMyMessage bool
 }
 
 func NewMessageItem() *MessageItem {
 	item := &MessageItem{
-		username: widget.NewLabel(""),
-		message:  widget.NewLabel(""),
-		spacer:   layout.NewSpacer(),
+		usernameLbl: widget.NewLabel(""),
+		timeLbl:     widget.NewLabel(""),
+		messageLbl:  widget.NewLabel(""),
 	}
 
-	item.ExtendBaseWidget(item)
+	item.usernameLbl.TextStyle = fyne.TextStyle{Bold: true}
 
+	item.messageLbl.TextStyle = fyne.TextStyle{Italic: true}
+	item.messageLbl.Wrapping = fyne.TextWrapWord
+
+	item.timeLbl.TextStyle = fyne.TextStyle{Monospace: true}
+
+	item.ExtendBaseWidget(item)
 	return item
 }
 
 func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
-	item.content = container.NewHBox(item.spacer, item.username, item.message)
-	return widget.NewSimpleRenderer(item.content)
+	// Заголовок: имя пользователя и время в одной строке
+	header := container.NewHBox(
+		item.usernameLbl,
+		layout.NewSpacer(),
+		item.timeLbl,
+	)
+
+	// Контент: заголовок и текст сообщения
+	content := container.NewVBox(
+		header,
+		item.messageLbl,
+	)
+
+	// Добавляем отступы вокруг всего сообщения
+	paddedContent := container.NewPadded(content)
+
+	return widget.NewSimpleRenderer(paddedContent)
 }
 
 func (item *MessageItem) SetData(data *chat.ChatMessage, isMyMessage bool) {
-	item.username.SetText(data.GetUser())
-	item.message.SetText(data.GetText())
+	item.usernameLbl.SetText(data.GetUser())
+	//item.timeLbl.SetText(formatTime(data.GetCreatedAt()))
+	item.timeLbl.SetText("time")
+	item.messageLbl.SetText(data.GetText())
+	item.isMyMessage = isMyMessage
 
 	if isMyMessage {
-		item.username.Hide()
-		item.spacer.Hide()
-		item.message.TextStyle = fyne.TextStyle{Bold: true}
+		item.usernameLbl.Importance = widget.LowImportance
+		item.usernameLbl.Alignment = fyne.TextAlignTrailing
+		item.timeLbl.Alignment = fyne.TextAlignTrailing
+		item.messageLbl.Alignment = fyne.TextAlignTrailing
 	} else {
-		item.username.TextStyle = fyne.TextStyle{Italic: true}
-		item.message.TextStyle = fyne.TextStyle{Italic: true}
+		item.usernameLbl.Importance = widget.HighImportance
+		item.usernameLbl.Alignment = fyne.TextAlignLeading
+		item.timeLbl.Alignment = fyne.TextAlignLeading
+		item.messageLbl.Alignment = fyne.TextAlignLeading
 	}
 
 	item.Refresh()
+}
+
+func formatTime(timestamp string) string {
+	// Реализуйте форматирование времени
+	return timestamp
 }

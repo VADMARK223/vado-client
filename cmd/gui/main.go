@@ -65,7 +65,7 @@ func newWindow(a fyne.App, envAppID string) fyne.Window {
 		title = fmt.Sprintf("Vado client (%s)", envAppID)
 	}
 	w := a.NewWindow(title)
-	w.Resize(fyne.NewSize(450, 400))
+	w.Resize(fyne.NewSize(450, 700))
 	return w
 }
 
