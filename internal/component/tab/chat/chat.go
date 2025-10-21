@@ -42,12 +42,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 		func() fyne.CanvasObject { return NewMessageItem() },
 		func(item binding.DataItem, obj fyne.CanvasObject) {
 			str, _ := item.(binding.Untyped).Get()
-
 			messageItem := obj.(*MessageItem)
 			messageData := str.(*pb.ChatMessage)
-
-			isMyMessage := messageData.Id == client.GetUserID(appCtx.App)
-			messageItem.SetData(messageData, isMyMessage)
+			messageItem.SetData(messageData)
 		})
 
 	scroll := container.NewVScroll(list)
@@ -75,7 +72,11 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 			token := client.GetToken(appCtx.App)
 			authCtx := withAuth(ctx, token)
 
-			stream, errStream := clientGRPC.ChatStream(authCtx, &pb.Empty{})
+			userID := client.GetUserID(appCtx.App)
+
+			req := &pb.ChatStreamRequest{Id: userID}
+
+			stream, errStream := clientGRPC.ChatStream(authCtx, req)
 			if errStream != nil {
 				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
 				time.Sleep(2 * time.Second)
@@ -142,6 +143,7 @@ func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *wi
 		appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := withAuth(ctx, token)
 
+		fmt.Println("Send message: ", client.GetUserID(appCtx.App))
 		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
 			Id:   client.GetUserID(appCtx.App),
 			User: client.GetUsername(appCtx.App),

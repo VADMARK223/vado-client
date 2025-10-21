@@ -57,10 +57,9 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 	return widget.NewSimpleRenderer(paddedContent)
 }
 
-func (item *MessageItem) SetData(data *chat.ChatMessage, isMyMessage bool) {
+func (item *MessageItem) SetData(data *chat.ChatMessage) {
 	item.usernameLbl.SetText(data.GetUser())
-	//fmt.Println("Time", formatTime(data.Timestamp))
-	//fmt.Println("Type", data.Type)
+	isMyMessage := data.Type == chat.MessageType_MESSAGE_SELF
 	item.timeLbl.SetText(formatTime(data.Timestamp))
 	item.messageLbl.SetText(data.GetText())
 	item.isMyMessage = isMyMessage
