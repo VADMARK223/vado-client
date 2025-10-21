@@ -1,7 +1,9 @@
 package chat
 
 import (
+	"time"
 	"vado-client/api/pb/chat"
+	"vado-client/internal/utils"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -57,8 +59,9 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 
 func (item *MessageItem) SetData(data *chat.ChatMessage, isMyMessage bool) {
 	item.usernameLbl.SetText(data.GetUser())
-	//item.timeLbl.SetText(formatTime(data.GetCreatedAt()))
-	item.timeLbl.SetText("time")
+	//fmt.Println("Time", formatTime(data.Timestamp))
+	//fmt.Println("Type", data.Type)
+	item.timeLbl.SetText(formatTime(data.Timestamp))
 	item.messageLbl.SetText(data.GetText())
 	item.isMyMessage = isMyMessage
 
@@ -77,7 +80,7 @@ func (item *MessageItem) SetData(data *chat.ChatMessage, isMyMessage bool) {
 	item.Refresh()
 }
 
-func formatTime(timestamp string) string {
-	// Реализуйте форматирование времени
-	return timestamp
+func formatTime(ts int64) string {
+	t := time.Unix(ts, 0).Local()
+	return utils.FormatTime(t)
 }

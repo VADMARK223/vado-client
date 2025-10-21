@@ -52,36 +52,16 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 
 	scroll := container.NewVScroll(list)
 
-	input := widget.NewEntry()
-	input.SetPlaceHolder("Сообщение...")
+	msgInput := widget.NewEntry()
+	msgInput.SetPlaceHolder("Сообщение...")
 
-	sendButton := widget.NewButton("Отправить", func() {
-		text := input.Text
-		if text == "" {
-			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
-			return
-		}
-		token := client.GetToken(appCtx.App)
-		appCtx.Log.Debugf("Send with token: %s", token)
-		authCtx := withAuth(ctx, token)
+	sendBtn := createSendBtn(appCtx, ctx, msgInput, clientGRPC)
 
-		_, errSendMessage := clientGRPC.SendMessage(authCtx, &pb.ChatMessage{
-			Id:   client.GetUserID(appCtx.App),
-			User: client.GetUsername(appCtx.App),
-			Text: text,
-		})
-		if errSendMessage != nil {
-			dialog.ShowError(errSendMessage, appCtx.Win)
-			return
-		}
-		input.SetText("")
-	})
+	updateButtons(appCtx.App, sendBtn, loginBtn)
 
-	updateButtons(appCtx.App, sendButton, loginBtn)
+	inputBox := container.NewVBox(msgInput, sendBtn)
 
-	bottomBox := container.NewVBox(input, sendButton)
-
-	content := container.NewBorder(topBox, bottomBox, nil, nil, scroll)
+	content := container.NewBorder(topBox, inputBox, nil, nil, scroll)
 
 	// Поток сообщений
 	go func() {
@@ -131,7 +111,7 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	appCtx.App.Preferences().AddChangeListener(func() {
 		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
 		userNameText.Refresh()
-		updateButtons(appCtx.App, sendButton, loginBtn)
+		updateButtons(appCtx.App, sendBtn, loginBtn)
 	})
 
 	appCtx.AddCloseHandler(func() {
@@ -149,4 +129,30 @@ func updateButtons(a fyne.App, sendBtn *widget.Button, loginBtn *widget.Button) 
 		sendBtn.Hide()
 		loginBtn.Show()
 	}
+}
+
+func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
+	result := widget.NewButton("Отправить", func() {
+		text := input.Text
+		if text == "" {
+			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
+			return
+		}
+		token := client.GetToken(appCtx.App)
+		appCtx.Log.Debugf("Send with token: %s", token)
+		authCtx := withAuth(ctx, token)
+
+		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
+			Id:   client.GetUserID(appCtx.App),
+			User: client.GetUsername(appCtx.App),
+			Text: text,
+		})
+		if errSendMessage != nil {
+			dialog.ShowError(errSendMessage, appCtx.Win)
+			return
+		}
+		input.SetText("")
+	})
+
+	return result
 }

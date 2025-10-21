@@ -13,6 +13,7 @@ import (
 	"vado-client/internal/constants/color"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/logger"
+	"vado-client/internal/utils"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/app"
@@ -37,7 +38,7 @@ func main() {
 	}
 
 	appCtx := appcontext.NewAppContext(initLogger(), clientGPRC, a, w)
-	appCtx.Log.Infow("Start vado-client.", "time", time.Now().Format("2006-01-02 15:04:05"))
+	appCtx.Log.Infow("Start vado-client.", "time", utils.FormatTime(time.Now()))
 
 	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx), layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
