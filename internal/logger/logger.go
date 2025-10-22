@@ -7,27 +7,35 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
-func Init() *zap.SugaredLogger {
-	encoderCfg := zap.NewDevelopmentEncoderConfig()
-	encoderCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
+func Init(dev bool) *zap.SugaredLogger {
+	var encoderCfg zapcore.EncoderConfig
+	var encoder zapcore.Encoder
+	var minLevel zapcore.Level
 
-	consoleEncoder := zapcore.NewConsoleEncoder(encoderCfg)
+	if dev {
+		encoderCfg = zap.NewDevelopmentEncoderConfig()
+		encoderCfg.EncodeTime = zapcore.TimeEncoderOfLayout("15:04:05.000")
+		encoderCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder // Разными цветами раскрашивает типы ошибок
+		encoder = zapcore.NewConsoleEncoder(encoderCfg)
+		minLevel = zap.DebugLevel // показываем всё
+	} else {
+		encoderCfg = zap.NewProductionEncoderConfig()
+		encoder = zapcore.NewJSONEncoder(encoderCfg)
+		minLevel = zap.InfoLevel // скрываем DEBUG
+	}
 
-	// Поток stdout для Info и ниже
+	// Разделяем уровни
 	infoLevel := zap.LevelEnablerFunc(func(l zapcore.Level) bool {
-		return l < zapcore.ErrorLevel
+		return l >= minLevel && l < zapcore.ErrorLevel
 	})
-
-	// Поток stderr для Error и выше
 	errorLevel := zap.LevelEnablerFunc(func(l zapcore.Level) bool {
 		return l >= zapcore.ErrorLevel
 	})
 
 	core := zapcore.NewTee(
-		zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), infoLevel),
-		zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stderr), errorLevel),
+		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), infoLevel),
+		zapcore.NewCore(encoder, zapcore.AddSync(os.Stderr), errorLevel),
 	)
 
-	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
-	return logger.Sugar()
+	return zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel)).Sugar()
 }

@@ -20,7 +20,6 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
-	"go.uber.org/zap"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -37,7 +36,10 @@ func main() {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
 	}
 
-	appCtx := appcontext.NewAppContext(initLogger(), clientGPRC, a, w)
+	zapLogger := logger.Init(true)
+	defer func() { _ = zapLogger.Sync() }()
+
+	appCtx := appcontext.NewAppContext(zapLogger, clientGPRC, a, w)
 	appCtx.Log.Infow("Start vado-client.", "time", utils.FormatTime(time.Now()))
 
 	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx), layout.NewSpacer()}
@@ -102,10 +104,4 @@ func createServerStatus(appCtx *appcontext.AppContext) []fyne.CanvasObject {
 
 	box := container.NewHBox(fastModeTxt, container.NewCenter(indicator), refreshBtn)
 	return []fyne.CanvasObject{box}
-}
-
-func initLogger() *zap.SugaredLogger {
-	zapLogger := logger.Init()
-	defer func() { _ = zapLogger.Sync() }()
-	return zapLogger
 }
