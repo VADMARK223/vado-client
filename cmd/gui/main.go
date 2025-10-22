@@ -105,11 +105,7 @@ func createServerStatus(appCtx *appcontext.AppContext) []fyne.CanvasObject {
 }
 
 func initLogger() *zap.SugaredLogger {
-	zapLogger, zapLoggerInitErr := logger.Init(true)
-	if zapLoggerInitErr != nil {
-		panic(zapLoggerInitErr)
-	}
+	zapLogger := logger.Init()
 	defer func() { _ = zapLogger.Sync() }()
-
 	return zapLogger
 }

@@ -13,7 +13,6 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
-	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 	"google.golang.org/grpc/metadata"
 )
@@ -49,16 +48,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 
 	scroll := container.NewVScroll(list)
 
-	msgInput := widget.NewEntry()
-	msgInput.SetPlaceHolder("Сообщение...")
+	updateButtons(appCtx.App, loginBtn)
 
-	sendBtn := createSendBtn(appCtx, ctx, msgInput, clientGRPC)
-
-	updateButtons(appCtx.App, sendBtn, loginBtn)
-
-	inputBox := container.NewVBox(msgInput, sendBtn)
-
-	content := container.NewBorder(topBox, inputBox, nil, nil, scroll)
+	content := container.NewBorder(topBox, newInputBox(appCtx, ctx, clientGRPC), nil, nil, scroll)
 
 	// Поток сообщений
 	go func() {
@@ -112,7 +104,7 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	appCtx.App.Preferences().AddChangeListener(func() {
 		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
 		userNameText.Refresh()
-		updateButtons(appCtx.App, sendBtn, loginBtn)
+		updateButtons(appCtx.App, loginBtn)
 	})
 
 	appCtx.AddCloseHandler(func() {
@@ -122,39 +114,10 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	return content
 }
 
-func updateButtons(a fyne.App, sendBtn *widget.Button, loginBtn *widget.Button) {
+func updateButtons(a fyne.App, loginBtn *widget.Button) {
 	if client.IsAuth(a) {
-		sendBtn.Show()
 		loginBtn.Hide()
 	} else {
-		sendBtn.Hide()
 		loginBtn.Show()
 	}
-}
-
-func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
-	result := widget.NewButton("Отправить", func() {
-		text := input.Text
-		if text == "" {
-			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
-			return
-		}
-		token := client.GetToken(appCtx.App)
-		appCtx.Log.Debugf("Send with token: %s", token)
-		authCtx := withAuth(ctx, token)
-
-		fmt.Println("Send message: ", client.GetUserID(appCtx.App))
-		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
-			Id:   client.GetUserID(appCtx.App),
-			User: client.GetUsername(appCtx.App),
-			Text: text,
-		})
-		if errSendMessage != nil {
-			dialog.ShowError(errSendMessage, appCtx.Win)
-			return
-		}
-		input.SetText("")
-	})
-
-	return result
 }

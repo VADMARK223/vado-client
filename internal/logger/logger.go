@@ -1,28 +1,33 @@
 package logger
 
 import (
+	"os"
+
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 )
 
-func Init(dev bool) (*zap.SugaredLogger, error) {
-	var cfg zap.Config
+func Init() *zap.SugaredLogger {
+	encoderCfg := zap.NewDevelopmentEncoderConfig()
+	encoderCfg.EncodeLevel = zapcore.CapitalColorLevelEncoder
 
-	if dev {
-		cfg = zap.NewDevelopmentConfig()
-		cfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
-		cfg.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-		cfg.Encoding = "console"
-	} else {
-		cfg = zap.NewProductionConfig()
-		cfg.Level = zap.NewAtomicLevelAt(zap.InfoLevel)
-		cfg.Encoding = "json"
-	}
+	consoleEncoder := zapcore.NewConsoleEncoder(encoderCfg)
 
-	logger, err := cfg.Build()
-	if err != nil {
-		return nil, err
-	}
+	// Поток stdout для Info и ниже
+	infoLevel := zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+		return l < zapcore.ErrorLevel
+	})
 
-	return logger.Sugar(), nil
+	// Поток stderr для Error и выше
+	errorLevel := zap.LevelEnablerFunc(func(l zapcore.Level) bool {
+		return l >= zapcore.ErrorLevel
+	})
+
+	core := zapcore.NewTee(
+		zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stdout), infoLevel),
+		zapcore.NewCore(consoleEncoder, zapcore.Lock(os.Stderr), errorLevel),
+	)
+
+	logger := zap.New(core, zap.AddCaller(), zap.AddStacktrace(zapcore.ErrorLevel))
+	return logger.Sugar()
 }

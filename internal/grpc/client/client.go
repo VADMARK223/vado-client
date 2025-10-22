@@ -55,6 +55,17 @@ func GetUsername(a fyne.App) string {
 	return "Гость"
 }
 
+func GetLastInput(a fyne.App) string {
+	preferences := a.Preferences()
+	lastInput := preferences.String(code.LastInput)
+	return lastInput
+}
+
+func SetLastInput(a fyne.App, value string) {
+	preferences := a.Preferences()
+	preferences.SetString(code.LastInput, value)
+}
+
 func IsAuth(a fyne.App) bool {
 	return GetToken(a) != ""
 }
