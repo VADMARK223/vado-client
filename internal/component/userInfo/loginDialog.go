@@ -8,6 +8,7 @@ import (
 	pb "vado-client/api/pb/auth"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/constants/code"
+	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -37,7 +38,9 @@ func ShowLoginDialog(appCtx *appcontext.AppContext, f *func(token string)) {
 		}
 
 		prefs := appCtx.App.Preferences()
-		prefs.SetString(code.JwtToken, resp.Token)
+		prefs.SetString(code.AccessToken, resp.Token)
+		prefs.SetString(code.RefreshToken, resp.RefreshToken)
+		prefs.SetInt(code.ExpiresAt, int(time.Now().Add(middleware.TokenAliveMinutes*time.Minute).Unix()))
 		prefs.SetString(code.Username, resp.Username)
 		prefs.SetString(code.Id, strconv.FormatUint(resp.Id, 10))
 

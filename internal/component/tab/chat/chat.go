@@ -9,17 +9,13 @@ import (
 	"vado-client/internal/appcontext"
 	"vado-client/internal/component/userInfo"
 	"vado-client/internal/grpc/client"
+	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
 	"fyne.io/fyne/v2/widget"
-	"google.golang.org/grpc/metadata"
 )
-
-func withAuth(ctx context.Context, token string) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
-}
 
 func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
@@ -61,14 +57,13 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 				return
 			}
 
-			token := client.GetToken(appCtx.App)
-			authCtx := withAuth(ctx, token)
+			//token := client.GetToken(appCtx.App)
 
 			userID := client.GetUserID(appCtx.App)
 
 			req := &pb.ChatStreamRequest{Id: userID}
 
-			stream, errStream := clientGRPC.ChatStream(authCtx, req)
+			stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
 			if errStream != nil {
 				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
 				time.Sleep(2 * time.Second)

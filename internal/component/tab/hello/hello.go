@@ -6,12 +6,12 @@ import (
 	"vado-client/api/pb/hello"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/grpc/client"
+	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"google.golang.org/grpc/metadata"
 )
 
 func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
@@ -20,7 +20,7 @@ func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 
 	label := widget.NewLabel("Пусто...")
 	button := widget.NewButton("Поздороваться", func() {
-		sendHello(ctx, label, input, client.GetToken(ctx.App))
+		sendHello(ctx, label, input)
 	})
 
 	return container.NewVBox(
@@ -30,18 +30,15 @@ func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 	)
 }
 
-func withAuth(ctx context.Context, token string) context.Context {
-	return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+token)
-}
-
-func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry, token string) {
+func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry) {
 	clientGRPC := hello.NewHelloServiceClient(appCtx.GRPC)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
+	token := client.GetToken(appCtx.App)
 	appCtx.Log.Debugf("Send with token: %s", token)
-	authCtx := withAuth(ctx, token)
+	authCtx := middleware.WithAuth(appCtx, ctx)
 	resp, err := clientGRPC.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
 		dialog.ShowInformation("Ошибка токена", err.Error(), appCtx.Win)

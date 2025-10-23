@@ -5,6 +5,7 @@ import (
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/appcontext"
 	"vado-client/internal/grpc/client"
+	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -58,9 +59,9 @@ func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *wi
 			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
 			return
 		}
-		token := client.GetToken(appCtx.App)
-		appCtx.Log.Debugf("Send with token: %s", token)
-		authCtx := withAuth(ctx, token)
+		//token := client.GetToken(appCtx.App)
+		//appCtx.Log.Debugf("Send with token: %s", token)
+		authCtx := middleware.WithAuth(appCtx, ctx)
 
 		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
 			Id:   client.GetUserID(appCtx.App),

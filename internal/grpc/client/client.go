@@ -26,14 +26,17 @@ func CreateClient(port string) (*grpc.ClientConn, error) {
 
 func GetToken(a fyne.App) string {
 	preferences := a.Preferences()
-	token := preferences.String(code.JwtToken)
+	token := preferences.String(code.AccessToken)
 	return token
 }
 
 func Logout(a fyne.App) {
 	preferences := a.Preferences()
-	preferences.RemoveValue(code.JwtToken)
+	preferences.RemoveValue(code.AccessToken)
+	preferences.RemoveValue(code.RefreshToken)
+	preferences.RemoveValue(code.ExpiresAt)
 	preferences.RemoveValue(code.Username)
+	preferences.RemoveValue(code.LastInput)
 	preferences.RemoveValue(code.Id)
 }
 
@@ -41,7 +44,7 @@ func GetUserID(a fyne.App) uint64 {
 	preferences := a.Preferences()
 	userID, parseUintErr := strconv.ParseUint(preferences.String(code.Id), 10, 64)
 	if parseUintErr != nil {
-		panic(parseUintErr)
+		return 0
 	}
 	return userID
 }
