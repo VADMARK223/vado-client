@@ -1,4 +1,4 @@
-package chat
+package chatTab
 
 import (
 	"context"
@@ -6,7 +6,7 @@ import (
 	"io"
 	"time"
 	pb "vado-client/api/pb/chat"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/component/userInfo"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
@@ -19,7 +19,7 @@ import (
 
 var userCountText = widget.NewRichTextWithText("")
 
-func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
+func New(appCtx *app.Context) *fyne.Container {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, cancel := context.WithCancel(context.Background())
 

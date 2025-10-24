@@ -6,9 +6,9 @@ import (
 	"os"
 	"time"
 	pbServer "vado-client/api/pb/server"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/component/common"
-	"vado-client/internal/component/tab"
+	"vado-client/internal/component/tabs"
 	"vado-client/internal/component/userInfo"
 	"vado-client/internal/constants/color"
 	"vado-client/internal/grpc/client"
@@ -16,7 +16,7 @@ import (
 	"vado-client/internal/utils"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/app"
+	f "fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
@@ -39,13 +39,13 @@ func main() {
 	zapLogger := logger.Init(true)
 	defer func() { _ = zapLogger.Sync() }()
 
-	appCtx := appcontext.NewAppContext(zapLogger, clientGPRC, a, w)
+	appCtx := app.NewAppContext(zapLogger, clientGPRC, a, w)
 	appCtx.Log.Infow("Start vado-client.", "time", utils.FormatTime(time.Now()))
 
 	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx), layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
 	bottomBar := container.NewHBox(bottomObjs...)
-	root := container.NewBorder(nil, bottomBar, nil, nil, tab.NewTab(appCtx))
+	root := container.NewBorder(nil, bottomBar, nil, nil, tabs.New(appCtx))
 	w.SetContent(root)
 	w.ShowAndRun()
 }
@@ -57,7 +57,7 @@ func newApp(envAppID string) fyne.App {
 	} else {
 		appID = fmt.Sprintf("vado-client-%s", envAppID)
 	}
-	return app.NewWithID(appID)
+	return f.NewWithID(appID)
 }
 
 func newWindow(a fyne.App, envAppID string) fyne.Window {
@@ -72,7 +72,7 @@ func newWindow(a fyne.App, envAppID string) fyne.Window {
 	return w
 }
 
-func getStatusServer(appCtx *appcontext.AppContext) bool {
+func getStatusServer(appCtx *app.Context) bool {
 	serverClient := pbServer.NewServerServiceClient(appCtx.GRPC)
 	pingResp, errPing := serverClient.Ping(context.Background(), &emptypb.Empty{})
 
@@ -86,7 +86,7 @@ func getStatusServer(appCtx *appcontext.AppContext) bool {
 	return result
 }
 
-func updateIndicatorColor(appCtx *appcontext.AppContext, indicator *common.Indicator) {
+func updateIndicatorColor(appCtx *app.Context, indicator *common.Indicator) {
 	if getStatusServer(appCtx) {
 		indicator.SetFillColor(color.Green())
 	} else {
@@ -94,7 +94,7 @@ func updateIndicatorColor(appCtx *appcontext.AppContext, indicator *common.Indic
 	}
 }
 
-func createServerStatus(appCtx *appcontext.AppContext) []fyne.CanvasObject {
+func createServerStatus(appCtx *app.Context) []fyne.CanvasObject {
 	fastModeTxt := widget.NewRichTextFromMarkdown("Server status:")
 	indicator := common.NewIndicator(color.Orange(), fyne.NewSize(10, 10))
 	refreshBtn := widget.NewButton("Обновить", func() {

@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 	pb "vado-client/api/pb/auth"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/constants/code"
 
 	"google.golang.org/grpc/metadata"
@@ -12,7 +12,7 @@ import (
 
 const TokenAliveMinutes = 15
 
-func WithAuth(appCtx *appcontext.AppContext, ctx context.Context) context.Context {
+func WithAuth(appCtx *app.Context, ctx context.Context) context.Context {
 	prefs := appCtx.App.Preferences()
 	access := prefs.String(code.AccessToken)
 	refresh := prefs.String(code.RefreshToken)

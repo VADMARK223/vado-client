@@ -1,4 +1,4 @@
-package chat
+package chatTab
 
 import (
 	"fmt"
@@ -17,19 +17,17 @@ import (
 
 type MessageItem struct {
 	widget.BaseWidget
-	usernameLbl *widget.Label
+	usernameLbl *canvas.Text
 	timeLbl     *widget.Label
 	messageLbl  *widget.Label
-	coloredLbl  *canvas.Text
 	isMyMessage bool
 }
 
 func NewMessageItem() *MessageItem {
 	item := &MessageItem{
-		usernameLbl: widget.NewLabel(""),
+		usernameLbl: canvas.NewText("", color.White),
 		timeLbl:     widget.NewLabel(""),
 		messageLbl:  widget.NewLabel(""),
-		coloredLbl:  canvas.NewText("color", color.Gray{Y: 0x99}),
 	}
 
 	item.usernameLbl.TextStyle = fyne.TextStyle{Bold: true}
@@ -55,7 +53,6 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 	content := container.NewVBox(
 		header,
 		item.messageLbl,
-		item.coloredLbl,
 	)
 
 	// Добавляем отступы вокруг всего сообщения
@@ -65,22 +62,20 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (item *MessageItem) SetData(data *chat.ChatMessage) {
-	item.usernameLbl.SetText(data.User)
-	item.coloredLbl.Text = data.Color
-	item.coloredLbl.Color = hexToColor(data.Color)
-	//item.coloredLbl.Color = data.Color
+	item.usernameLbl.Text = data.User.Username
+	item.usernameLbl.Color = hexToColor(data.User.Color)
 	isMyMessage := data.Type == chat.MessageType_MESSAGE_SELF
 	item.timeLbl.SetText(formatTime(data.Timestamp))
 	item.messageLbl.SetText(data.GetText())
 	item.isMyMessage = isMyMessage
 
 	if isMyMessage {
-		item.usernameLbl.Importance = widget.LowImportance
+		//item.usernameLbl.Importance = widget.LowImportance
 		item.usernameLbl.Alignment = fyne.TextAlignTrailing
 		item.timeLbl.Alignment = fyne.TextAlignTrailing
 		item.messageLbl.Alignment = fyne.TextAlignTrailing
 	} else {
-		item.usernameLbl.Importance = widget.HighImportance
+		//item.usernameLbl.Importance = widget.HighImportance
 		item.usernameLbl.Alignment = fyne.TextAlignLeading
 		item.timeLbl.Alignment = fyne.TextAlignLeading
 		item.messageLbl.Alignment = fyne.TextAlignLeading
@@ -98,7 +93,7 @@ func hexToColor(hex string) color.Color {
 	var r, g, b uint8
 	_, err := fmt.Sscanf(hex, "#%02x%02x%02x", &r, &g, &b)
 	if err != nil {
-		return theme.ForegroundColor() // fallback
+		return theme.Color(theme.ColorNameForeground)
 	}
 	return color.NRGBA{R: r, G: g, B: b, A: 255}
 }

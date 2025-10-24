@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 	"vado-client/api/pb/hello"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
 
@@ -14,7 +14,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
+func NewHelloBox(ctx *app.Context) *fyne.Container {
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите имя")
 
@@ -30,7 +30,7 @@ func NewHelloBox(ctx *appcontext.AppContext) *fyne.Container {
 	)
 }
 
-func sendHello(appCtx *appcontext.AppContext, label *widget.Label, input *widget.Entry) {
+func sendHello(appCtx *app.Context, label *widget.Label, input *widget.Entry) {
 	clientGRPC := hello.NewHelloServiceClient(appCtx.GRPC)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)

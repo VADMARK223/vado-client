@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 	pb "vado-client/api/pb/auth"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/constants/code"
 	"vado-client/internal/grpc/middleware"
 
@@ -17,7 +17,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func ShowLoginDialog(appCtx *appcontext.AppContext, f *func(token string)) {
+func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Введите логин")
 

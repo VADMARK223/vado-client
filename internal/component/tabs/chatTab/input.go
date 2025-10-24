@@ -1,9 +1,9 @@
-package chat
+package chatTab
 
 import (
 	"context"
 	pb "vado-client/api/pb/chat"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
 
@@ -13,7 +13,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func newInputBox(appCtx *appcontext.AppContext, ctx context.Context, clientGRPC pb.ChatServiceClient) *fyne.Container {
+func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatServiceClient) *fyne.Container {
 	msgInput := widget.NewEntry()
 	msgInput.SetText(client.GetLastInput(appCtx.App))
 	msgInput.SetPlaceHolder("Сообщение...")
@@ -52,7 +52,7 @@ func updateSendBtn(app fyne.App, sendBtn *widget.Button) {
 	}
 }
 
-func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
+func createSendBtn(appCtx *app.Context, ctx context.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
 	result := widget.NewButton("Отправить", func() {
 		text := input.Text
 		if text == "" {
@@ -64,8 +64,7 @@ func createSendBtn(appCtx *appcontext.AppContext, ctx context.Context, input *wi
 		authCtx := middleware.WithAuth(appCtx, ctx)
 
 		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
-			Id:   client.GetUserID(appCtx.App),
-			User: client.GetUsername(appCtx.App),
+			User: &pb.User{Id: client.GetUserID(appCtx.App), Username: client.GetUsername(appCtx.App)},
 			Text: text,
 		})
 		if errSendMessage != nil {

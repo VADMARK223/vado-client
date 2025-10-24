@@ -2,7 +2,7 @@ package userInfo
 
 import (
 	"fmt"
-	"vado-client/internal/appcontext"
+	"vado-client/internal/app"
 	"vado-client/internal/grpc/client"
 
 	"fyne.io/fyne/v2"
@@ -10,7 +10,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func CreateUserInfo(appCtx *appcontext.AppContext) *fyne.Container {
+func CreateUserInfo(appCtx *app.Context) *fyne.Container {
 	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(appCtx.App)))
 	appCtx.App.Preferences().AddChangeListener(func() {
 		userNameText.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", client.GetUsername(appCtx.App)))
