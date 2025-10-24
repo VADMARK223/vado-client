@@ -17,6 +17,8 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+var userCountText = widget.NewRichTextWithText("")
+
 func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, cancel := context.WithCancel(context.Background())
@@ -27,9 +29,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 		userInfo.ShowLoginDialog(appCtx, nil)
 	})
 
-	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
+	updateCountText(0)
 
-	topBox := container.NewVBox(controlBox, userNameText)
+	topBox := container.NewVBox(controlBox, userCountText)
 
 	messages := binding.NewUntypedList()
 	list := widget.NewListWithData(
@@ -57,12 +59,9 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 				return
 			}
 
-			//token := client.GetToken(appCtx.App)
-
 			userID := client.GetUserID(appCtx.App)
 
 			req := &pb.ChatStreamRequest{Id: userID}
-
 			stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
 			if errStream != nil {
 				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
@@ -85,8 +84,14 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 
 				fyne.Do(func() {
 					errAppend := messages.Append(msg)
+
 					if errAppend != nil {
 						appCtx.Log.Errorw("Error append message", "error", errAppend)
+					}
+
+					//_, _ = pp.Println(msg)
+					if msg.Type == pb.MessageType_MESSAGE_SYSTEM {
+						updateCountText(msg.UsersCount)
 					}
 				})
 			}
@@ -97,8 +102,6 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	}()
 
 	appCtx.App.Preferences().AddChangeListener(func() {
-		userNameText.ParseMarkdown(fmt.Sprintf("Привет, **%s**!", client.GetUsername(appCtx.App)))
-		userNameText.Refresh()
 		updateButtons(appCtx.App, loginBtn)
 	})
 
@@ -107,6 +110,14 @@ func NewChat(appCtx *appcontext.AppContext) *fyne.Container {
 	})
 
 	return content
+}
+
+func updateCountText(count uint32) {
+	if count == 1 {
+		userCountText.ParseMarkdown("В комнате пока только вы.")
+	} else {
+		userCountText.ParseMarkdown(fmt.Sprintf("В комнате пользователей: **%v**", count))
+	}
 }
 
 func updateButtons(a fyne.App, loginBtn *widget.Button) {

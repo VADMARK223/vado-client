@@ -1,13 +1,17 @@
 package chat
 
 import (
+	"fmt"
+	"image/color"
 	"time"
 	"vado-client/api/pb/chat"
 	"vado-client/internal/utils"
 
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/layout"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -16,6 +20,7 @@ type MessageItem struct {
 	usernameLbl *widget.Label
 	timeLbl     *widget.Label
 	messageLbl  *widget.Label
+	coloredLbl  *canvas.Text
 	isMyMessage bool
 }
 
@@ -24,6 +29,7 @@ func NewMessageItem() *MessageItem {
 		usernameLbl: widget.NewLabel(""),
 		timeLbl:     widget.NewLabel(""),
 		messageLbl:  widget.NewLabel(""),
+		coloredLbl:  canvas.NewText("color", color.Gray{Y: 0x99}),
 	}
 
 	item.usernameLbl.TextStyle = fyne.TextStyle{Bold: true}
@@ -49,6 +55,7 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 	content := container.NewVBox(
 		header,
 		item.messageLbl,
+		item.coloredLbl,
 	)
 
 	// Добавляем отступы вокруг всего сообщения
@@ -58,7 +65,10 @@ func (item *MessageItem) CreateRenderer() fyne.WidgetRenderer {
 }
 
 func (item *MessageItem) SetData(data *chat.ChatMessage) {
-	item.usernameLbl.SetText(data.GetUser())
+	item.usernameLbl.SetText(data.User)
+	item.coloredLbl.Text = data.Color
+	item.coloredLbl.Color = hexToColor(data.Color)
+	//item.coloredLbl.Color = data.Color
 	isMyMessage := data.Type == chat.MessageType_MESSAGE_SELF
 	item.timeLbl.SetText(formatTime(data.Timestamp))
 	item.messageLbl.SetText(data.GetText())
@@ -82,4 +92,13 @@ func (item *MessageItem) SetData(data *chat.ChatMessage) {
 func formatTime(ts int64) string {
 	t := time.Unix(ts, 0).Local()
 	return utils.FormatTime(t)
+}
+
+func hexToColor(hex string) color.Color {
+	var r, g, b uint8
+	_, err := fmt.Sscanf(hex, "#%02x%02x%02x", &r, &g, &b)
+	if err != nil {
+		return theme.ForegroundColor() // fallback
+	}
+	return color.NRGBA{R: r, G: g, B: b, A: 255}
 }
