@@ -22,6 +22,7 @@ func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
 	usernameEntry.SetPlaceHolder("Введите логин")
 
 	passwordEntry := widget.NewEntry()
+	passwordEntry.Password = true
 	passwordEntry.SetPlaceHolder("Введите пароль")
 
 	authClient := pb.NewAuthServiceClient(appCtx.GRPC)

@@ -7,6 +7,8 @@ import (
 	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
+	"vado-client/internal/app/keyman"
+	"vado-client/internal/component/tabs/tabItem"
 	"vado-client/internal/component/userInfo"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
@@ -17,9 +19,35 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
+type ChatTab struct {
+	*fyne.Container
+	btn    *widget.Button
+	canvas fyne.Canvas
+	unsub  func() // Отписка от события
+	keyman *keyman.KeyManager
+}
+
+func (t *ChatTab) Open() {
+	t.unsub = t.keyman.Subscribe(func(ev *fyne.KeyEvent) {
+		if ev.Name == fyne.KeyReturn || ev.Name == fyne.KeyEnter {
+			t.btn.OnTapped()
+		}
+	})
+}
+
+func (t *ChatTab) Close() {
+	if t.unsub != nil {
+		t.unsub()
+	}
+}
+
+func (t *ChatTab) Canvas() fyne.CanvasObject {
+	return t.Container
+}
+
 var userCountText = widget.NewRichTextWithText("")
 
-func New(appCtx *app.Context) *fyne.Container {
+func New(appCtx *app.Context) tabItem.TabContent {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 	ctx, cancel := context.WithCancel(context.Background())
 
@@ -48,7 +76,10 @@ func New(appCtx *app.Context) *fyne.Container {
 
 	updateButtons(appCtx.App, loginBtn)
 
-	content := container.NewBorder(topBox, newInputBox(appCtx, ctx, clientGRPC), nil, nil, scroll)
+	input, sendBtn := newInputBox(appCtx, ctx, clientGRPC)
+	inputBox := container.NewVBox(input, sendBtn)
+
+	content := container.NewBorder(topBox, inputBox, nil, nil, scroll)
 
 	// Поток сообщений
 	go func() {
@@ -109,7 +140,12 @@ func New(appCtx *app.Context) *fyne.Container {
 		cancel()
 	})
 
-	return content
+	return &ChatTab{
+		Container: content,
+		btn:       sendBtn,
+		canvas:    appCtx.Win.Canvas(),
+		keyman:    appCtx.KeyMan,
+	}
 }
 
 func updateCountText(count uint32) {

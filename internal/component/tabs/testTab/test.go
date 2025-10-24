@@ -20,8 +20,6 @@ type Tab struct {
 }
 
 func (t *Tab) Open() {
-	fmt.Println("Открыт TestTab")
-
 	t.unsub = t.keyman.Subscribe(func(ev *fyne.KeyEvent) {
 		if ev.Name == fyne.KeyReturn || ev.Name == fyne.KeyEnter {
 			t.btn.OnTapped()
@@ -30,8 +28,6 @@ func (t *Tab) Open() {
 }
 
 func (t *Tab) Close() {
-	fmt.Println("Закрыт TestTab")
-
 	if t.unsub != nil {
 		t.unsub()
 	}
@@ -42,7 +38,6 @@ func (t *Tab) Canvas() fyne.CanvasObject {
 }
 
 func New(appCtx *app.Context) tabItem.TabContent {
-	fmt.Println("Create test tabs")
 	btn := widget.NewButton("Click", func() {
 		fmt.Println("Clicked!")
 	})

@@ -10,11 +10,15 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
+const defaultTabIndex = 0
+
 func New(appCtx *app.Context) *container.AppTabs {
 	factories := map[*container.TabItem]func() tabItem.TabContent{}
 
 	tabs := container.NewAppTabs(
-		container.NewTabItem("Чат", chatTab.New(appCtx)),
+		tabItem.New("Чат", func() tabItem.TabContent {
+			return chatTab.New(appCtx)
+		}, factories),
 		container.NewTabItem("Проверка", hello.NewHelloBox(appCtx)),
 		tabItem.New("Test", func() tabItem.TabContent {
 			return testTab.New(appCtx)
@@ -50,24 +54,13 @@ func New(appCtx *app.Context) *container.AppTabs {
 			content.Open()
 			active = content
 		}
+	}
 
-		//if !ok {
-		//	appCtx.Log.Debugw("Tab is not loaded")
-		//}
-		//if item == nil || loaded[item] {
-		//	return
-		//}
-
-		/*if factory, ok := factories[item]; ok {
-			go func() {
-				// Обновляем UI безопасно
-				fyne.Do(func() {
-					item.Content = factory()
-					loaded[item] = true
-					delete(factories, item)
-				})
-			}()
-		}*/
+	if len(tabs.Items) > 0 {
+		item := tabs.Items[defaultTabIndex]
+		if tabs.OnSelected != nil {
+			tabs.OnSelected(item)
+		}
 	}
 
 	return tabs

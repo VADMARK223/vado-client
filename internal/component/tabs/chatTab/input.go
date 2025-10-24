@@ -8,12 +8,11 @@ import (
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
-	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
 )
 
-func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatServiceClient) *fyne.Container {
+func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatServiceClient) (*widget.Entry, *widget.Button) {
 	msgInput := widget.NewEntry()
 	msgInput.SetText(client.GetLastInput(appCtx.App))
 	msgInput.SetPlaceHolder("Сообщение...")
@@ -33,7 +32,11 @@ func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatSer
 		client.SetLastInput(appCtx.App, msgInput.Text)
 	})
 
-	return container.NewVBox(msgInput, sendBtn)
+	msgInput.OnSubmitted = func(text string) {
+		sendBtn.OnTapped()
+	}
+
+	return msgInput, sendBtn
 }
 
 func updateEnableSendBtn(btn *widget.Button, text string) {
@@ -59,8 +62,6 @@ func createSendBtn(appCtx *app.Context, ctx context.Context, input *widget.Entry
 			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
 			return
 		}
-		//token := client.GetToken(appCtx.App)
-		//appCtx.Log.Debugf("Send with token: %s", token)
 		authCtx := middleware.WithAuth(appCtx, ctx)
 
 		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
