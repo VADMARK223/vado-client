@@ -29,8 +29,8 @@ func WithAuth(appCtx *app.Context, ctx context.Context) context.Context {
 	if refresh != "" {
 		resp, err := authClient.Refresh(ctx, &pb.RefreshRequest{RefreshToken: refresh})
 		if err != nil {
-			appCtx.Log.Errorw("Error refresh token", "error", err)
-			panic(err)
+			appCtx.Log.Warnw("Error refresh token", "error", err)
+			return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+access)
 		}
 
 		prefs.SetString(code.AccessToken, resp.Token)

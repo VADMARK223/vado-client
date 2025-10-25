@@ -4,13 +4,14 @@ import (
 	"vado-client/internal/app"
 	"vado-client/internal/component/tabs/chatTab"
 	"vado-client/internal/component/tabs/hello"
+	"vado-client/internal/component/tabs/kafkaTab"
 	"vado-client/internal/component/tabs/tabItem"
 	"vado-client/internal/component/tabs/testTab"
 
 	"fyne.io/fyne/v2/container"
 )
 
-const defaultTabIndex = 0
+const defaultTabIndex = 2
 
 func New(appCtx *app.Context) *container.AppTabs {
 	factories := map[*container.TabItem]func() tabItem.TabContent{}
@@ -20,6 +21,9 @@ func New(appCtx *app.Context) *container.AppTabs {
 			return chatTab.New(appCtx)
 		}, factories),
 		container.NewTabItem("Проверка", hello.NewHelloBox(appCtx)),
+		tabItem.New("Kafka", func() tabItem.TabContent {
+			return kafkaTab.New(appCtx)
+		}, factories),
 		tabItem.New("Test", func() tabItem.TabContent {
 			return testTab.New(appCtx)
 		}, factories),
@@ -61,6 +65,7 @@ func New(appCtx *app.Context) *container.AppTabs {
 		if tabs.OnSelected != nil {
 			tabs.OnSelected(item)
 		}
+		tabs.SelectIndex(defaultTabIndex)
 	}
 
 	return tabs
