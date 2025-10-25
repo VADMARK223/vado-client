@@ -29,6 +29,7 @@ func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatSer
 	})
 
 	appCtx.AddCloseHandler(func() {
+		appCtx.Log.Debugw("Save last input.")
 		client.SetLastInput(appCtx.App, msgInput.Text)
 	})
 

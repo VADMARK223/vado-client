@@ -90,9 +90,7 @@ func New(appCtx *app.Context) tabItem.TabContent {
 				return
 			}
 
-			userID := client.GetUserID(appCtx.App)
-
-			req := &pb.ChatStreamRequest{Id: userID}
+			req := &pb.ChatStreamRequest{User: &pb.User{Id: client.GetUserID(appCtx.App), Username: client.GetUsername(appCtx.App)}}
 			stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
 			if errStream != nil {
 				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
@@ -114,13 +112,15 @@ func New(appCtx *app.Context) tabItem.TabContent {
 				}
 
 				fyne.Do(func() {
-					errAppend := messages.Append(msg)
+					// Не показываем первое сообщение о входе самого себя
+					if msg.Type != pb.MessageType_MESSAGE_SYSTEM || msg.User.Id != client.GetUserID(appCtx.App) {
+						errAppend := messages.Append(msg)
 
-					if errAppend != nil {
-						appCtx.Log.Errorw("Error append message", "error", errAppend)
+						if errAppend != nil {
+							appCtx.Log.Errorw("Error append message", "error", errAppend)
+						}
 					}
 
-					//_, _ = pp.Println(msg)
 					if msg.Type == pb.MessageType_MESSAGE_SYSTEM {
 						updateCountText(msg.UsersCount)
 					}
@@ -137,6 +137,7 @@ func New(appCtx *app.Context) tabItem.TabContent {
 	})
 
 	appCtx.AddCloseHandler(func() {
+		appCtx.Log.Debugw("Chat cancel context.")
 		cancel()
 	})
 
