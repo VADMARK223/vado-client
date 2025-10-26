@@ -28,6 +28,7 @@ type ChatTab struct {
 }
 
 func (t *ChatTab) Open() {
+
 	t.unsub = t.keyman.Subscribe(func(ev *fyne.KeyEvent) {
 		if ev.Name == fyne.KeyReturn || ev.Name == fyne.KeyEnter {
 			t.btn.OnTapped()

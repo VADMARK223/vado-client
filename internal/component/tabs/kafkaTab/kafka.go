@@ -3,8 +3,6 @@ package kafkaTab
 import (
 	"context"
 	"fmt"
-	"log"
-	"time"
 	"vado-client/internal/app"
 	"vado-client/internal/component/tabs/tabItem"
 	"vado-client/internal/grpc/client"
@@ -13,20 +11,36 @@ import (
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/widget"
-	"github.com/segmentio/kafka-go"
 )
 
 type Tab struct {
 	*fyne.Container
-	cxt *app.Context
+	cxt      *app.Context
+	input    *widget.Entry
+	btn      *widget.Button
+	producer *Producer
 }
 
 func (t *Tab) Open() {
 	t.cxt.Log.Debugw("Kafka tab opened")
+	producer := NewProducer("localhost:9094", "chat", t.cxt.Log)
+	t.producer = producer
+
+	t.btn.Enable()
+	t.btn.OnTapped = func() {
+		t.sendMessage()
+	}
 }
 
 func (t *Tab) Close() {
 	t.cxt.Log.Debugw("Kafka tab closed")
+	if t.producer != nil {
+		if err := t.producer.Close(); err != nil {
+			t.cxt.Log.Errorw("Kafka producer close error", "error", err)
+		}
+		t.producer = nil
+	}
+	t.btn.Disable()
 }
 
 func (t *Tab) Canvas() fyne.CanvasObject {
@@ -35,31 +49,19 @@ func (t *Tab) Canvas() fyne.CanvasObject {
 
 func New(appCtx *app.Context) tabItem.TabContent {
 	appCtx.Log.Debugw("Kafka tab created")
-	writer := newKafkaWriter("localhost:9094", "chat")
 
 	input := widget.NewEntry()
 	input.SetPlaceHolder("Введите сообщение")
-	time.AfterFunc(100*time.Millisecond, func() {
-		fyne.Do(func() {
-			fyne.CurrentApp().Driver().CanvasForObject(input).Focus(input)
-		})
-	})
 
-	btn := widget.NewButton("Отправить", func() {
-		appCtx.Log.Debugw("Kafka tab send message")
-		user := fmt.Sprintf("User-%s", client.GetUsername(appCtx.App))
-		msg := input.Text
-		if msg == "" {
-			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
-			return
-		}
-		sendChatMessage(writer, user, msg)
-	})
+	btn := widget.NewButton("Отправить", nil)
 	btn.Disable()
 
-	input.OnSubmitted = func(text string) {
-		btn.OnTapped()
+	tab := &Tab{
+		cxt:   appCtx,
+		input: input,
+		btn:   btn,
 	}
+
 	input.OnChanged = func(text string) {
 		if text != "" {
 			btn.Enable()
@@ -67,38 +69,33 @@ func New(appCtx *app.Context) tabItem.TabContent {
 			btn.Disable()
 		}
 	}
-
-	c := container.NewVBox(
-		input,
-		btn,
-	)
-
-	return &Tab{
-		Container: c,
-		cxt:       appCtx,
-	}
-}
-
-func newKafkaWriter(broker, topic string) *kafka.Writer {
-	brokers := []string{broker}
-	writer := &kafka.Writer{
-		Addr:                   kafka.TCP(brokers...),
-		Topic:                  topic,
-		Balancer:               &kafka.LeastBytes{}, // Балансировщик для распределения сообщений по партициям (можно использовать другие: Hash, RoundRobin)
-		AllowAutoTopicCreation: true,                // Авто создание топика
+	input.OnSubmitted = func(string) {
+		tab.sendMessage()
 	}
 
-	return writer
+	tab.Container = container.NewVBox(input, btn)
+	return tab
 }
 
-func sendChatMessage(writer *kafka.Writer, user, msg string) {
-	err := writer.WriteMessages(context.Background(),
-		kafka.Message{
-			Key:   []byte(user),
-			Value: []byte(msg),
-		},
-	)
+// sendMessage — логика отправки одного сообщения
+func (t *Tab) sendMessage() {
+	user := fmt.Sprintf("User-%s", client.GetUsername(t.cxt.App))
+	msg := t.input.Text
+
+	if msg == "" {
+		dialog.ShowInformation("Предупреждение", "Пустое сообщение", t.cxt.Win)
+		return
+	}
+	if t.producer == nil {
+		dialog.ShowError(fmt.Errorf("producer ещё не инициализирован"), t.cxt.Win)
+		return
+	}
+
+	err := t.producer.SendMessage(context.Background(), []byte(user), []byte(msg))
 	if err != nil {
-		log.Printf("Kafka write error: %v", err)
+		dialog.ShowError(fmt.Errorf("не удалось отправить сообщение: %v", err), t.cxt.Win)
+		return
 	}
+
+	t.input.SetText("")
 }

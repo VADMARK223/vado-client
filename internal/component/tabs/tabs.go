@@ -61,11 +61,14 @@ func New(appCtx *app.Context) *container.AppTabs {
 	}
 
 	if len(tabs.Items) > 0 {
-		item := tabs.Items[defaultTabIndex]
-		if tabs.OnSelected != nil {
-			tabs.OnSelected(item)
+		if defaultTabIndex == 0 {
+			item := tabs.Items[defaultTabIndex]
+			if tabs.OnSelected != nil {
+				tabs.OnSelected(item)
+			}
+		} else {
+			tabs.SelectIndex(defaultTabIndex)
 		}
-		tabs.SelectIndex(defaultTabIndex)
 	}
 
 	return tabs
