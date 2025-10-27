@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"vado-client/internal/app"
 	"vado-client/internal/component/tabs/tabItem"
+	"vado-client/internal/config/port"
 	"vado-client/internal/grpc/client"
+	"vado-client/internal/infra/kafka"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -18,12 +20,14 @@ type Tab struct {
 	cxt      *app.Context
 	input    *widget.Entry
 	btn      *widget.Button
-	producer *Producer
+	producer *kafka.Producer
 }
 
 func (t *Tab) Open() {
 	t.cxt.Log.Debugw("Kafka tab opened")
-	producer := NewProducer("localhost:9094", "chat", t.cxt.Log)
+
+	broker := "localhost:" + port.Kafka
+	producer := kafka.NewProducer(broker, "chat", t.cxt.Log)
 	t.producer = producer
 
 	t.btn.Enable()

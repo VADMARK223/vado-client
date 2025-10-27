@@ -1,4 +1,4 @@
-package kafkaTab
+package kafka
 
 import (
 	"context"
@@ -23,37 +23,13 @@ func NewProducer(broker, topic string, log *zap.SugaredLogger) *Producer {
 	}
 
 	return &Producer{
-		writer: writer, /*&kafka.Writer{
-			Addr:                   kafka.TCP(broker),
-			Topic:                  topic,
-			Balancer:               &kafka.LeastBytes{},
-			AllowAutoTopicCreation: true,
-			// --- важные продакшн-настройки ---
-			RequiredAcks: kafka.RequireAll, // дождаться репликации
-			MaxAttempts:  5,                // до 5 попыток при ошибке
-			BatchTimeout: 200 * time.Millisecond,
-			BatchSize:    100,   // пакет до 100 сообщений
-			Async:        false, // ждать подтверждения (без потерь)
-			Transport: &kafka.Transport{
-				//IdleConnTimeout:   30 * time.Second,
-				MetadataTTL: time.Minute,
-				ClientID:    "vado-producer",
-				DialTimeout: 5 * time.Second,
-				//WriteTimeout:      5 * time.Second,
-				//ReadTimeout:       5 * time.Second,
-				//MaxIdleConns:      10,
-				//EnableIdleTimeout: true,
-			},
-		},*/
-		log: log,
+		writer: writer,
+		log:    log,
 	}
 }
 
 // SendMessage — безопасная отправка сообщения с ретраями и логами
-func (p *Producer) SendMessage(ctx context.Context, key, value []byte) error {
-	//ctx, cancel := context.WithTimeout(ctx, 3*time.Second)
-	//defer cancel()
-
+func (p *Producer) SendMessage(_ context.Context, key, value []byte) error {
 	msg := kafka.Message{
 		Key:   key,
 		Value: value,

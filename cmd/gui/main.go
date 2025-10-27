@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"os"
 	"time"
-	pbServer "vado-client/api/pb/server"
+	pbPing "vado-client/api/pb/ping"
 	"vado-client/internal/app"
+	"vado-client/internal/app/logger"
 	"vado-client/internal/component/common"
 	"vado-client/internal/component/tabs"
 	"vado-client/internal/component/userInfo"
-	"vado-client/internal/constants/color"
+	"vado-client/internal/config/color"
 	"vado-client/internal/grpc/client"
-	"vado-client/internal/logger"
 	"vado-client/internal/utils"
 
 	"fyne.io/fyne/v2"
@@ -23,14 +23,12 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-const PortGRPC = "50051"
-
 func main() {
 	envAppID := os.Getenv("APP_ID")
 	a := newApp(envAppID)
 	w := newWindow(a, envAppID)
 
-	clientGPRC, err := client.CreateClient(PortGRPC)
+	clientGPRC, err := client.CreateClient()
 
 	if err != nil {
 		fmt.Printf("Fail create gRPC client: %s", err.Error())
@@ -73,7 +71,7 @@ func newWindow(a fyne.App, envAppID string) fyne.Window {
 }
 
 func getStatusServer(appCtx *app.Context) bool {
-	serverClient := pbServer.NewServerServiceClient(appCtx.GRPC)
+	serverClient := pbPing.NewPingServiceClient(appCtx.GRPC)
 	pingResp, errPing := serverClient.Ping(context.Background(), &emptypb.Empty{})
 
 	var result bool

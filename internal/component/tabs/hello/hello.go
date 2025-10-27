@@ -39,7 +39,7 @@ func sendHello(appCtx *app.Context, label *widget.Label, input *widget.Entry) {
 	token := client.GetToken(appCtx.App)
 	appCtx.Log.Debugf("Send with token: %s", token)
 	authCtx := middleware.WithAuth(appCtx, ctx)
-	resp, err := clientGRPC.SeyHello(authCtx, &hello.HelloRequest{Name: input.Text})
+	resp, err := clientGRPC.SayHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
 		dialog.ShowInformation("Ошибка токена", err.Error(), appCtx.Win)
 		return

@@ -3,15 +3,16 @@ package client
 import (
 	"fmt"
 	"strconv"
-	"vado-client/internal/constants/code"
+	"vado-client/internal/config/code"
+	"vado-client/internal/config/port"
 
 	"fyne.io/fyne/v2"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-func CreateClient(port string) (*grpc.ClientConn, error) {
-	target := "localhost:" + port
+func CreateClient() (*grpc.ClientConn, error) {
+	target := "localhost:" + port.GRPC
 	conn, err := grpc.NewClient(
 		target,
 		grpc.WithTransportCredentials(insecure.NewCredentials()),

@@ -7,7 +7,7 @@ import (
 	"time"
 	pb "vado-client/api/pb/auth"
 	"vado-client/internal/app"
-	"vado-client/internal/constants/code"
+	"vado-client/internal/config/code"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
