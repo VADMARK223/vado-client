@@ -28,7 +28,6 @@ type ChatTab struct {
 }
 
 func (t *ChatTab) Open() {
-
 	t.unsub = t.keyman.Subscribe(func(ev *fyne.KeyEvent) {
 		if ev.Name == fyne.KeyReturn || ev.Name == fyne.KeyEnter {
 			t.btn.OnTapped()
@@ -89,6 +88,11 @@ func New(appCtx *app.Context) tabItem.TabContent {
 		for {
 			if ctx.Err() != nil {
 				return
+			}
+
+			// TODO: Тут надо проверить вообще пользователь авторизовался, прежде чем впускать в стрим
+			if !client.IsAuth(appCtx.App) {
+				continue
 			}
 
 			req := &pb.ChatStreamRequest{User: &pb.User{Id: client.GetUserID(appCtx.App), Username: client.GetUsername(appCtx.App)}}
