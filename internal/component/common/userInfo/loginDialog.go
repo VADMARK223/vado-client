@@ -2,12 +2,10 @@ package userInfo
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"time"
 	pb "vado-client/api/pb/auth"
 	"vado-client/internal/app"
-	"vado-client/internal/config/code"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
@@ -17,7 +15,7 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
+func ShowLoginDialog(ctx *app.Context, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
 	usernameEntry.SetPlaceHolder("Введите логин")
 
@@ -25,7 +23,7 @@ func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
 	passwordEntry.Password = true
 	passwordEntry.SetPlaceHolder("Введите пароль")
 
-	authClient := pb.NewAuthServiceClient(appCtx.GRPC)
+	authClient := pb.NewAuthServiceClient(ctx.GRPC)
 	var dlg dialog.Dialog
 	doneBtn := widget.NewButton("Войти", func() {
 		resp, err := authClient.Login(context.Background(), &pb.LoginRequest{
@@ -34,16 +32,15 @@ func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
 		})
 
 		if err != nil {
-			dialog.ShowInformation("Ошибка входа", err.Error(), appCtx.Win)
+			dialog.ShowInformation("Ошибка входа", err.Error(), ctx.Win)
 			return
 		}
 
-		prefs := appCtx.App.Preferences()
-		prefs.SetString(code.AccessToken, resp.Token)
-		prefs.SetString(code.RefreshToken, resp.RefreshToken)
-		prefs.SetInt(code.ExpiresAt, int(time.Now().Add(middleware.TokenAliveMinutes*time.Minute).Unix()))
-		prefs.SetString(code.Username, resp.Username)
-		prefs.SetString(code.Id, strconv.FormatUint(resp.Id, 10))
+		ctx.Prefs.SetUserID(resp.Id)
+		ctx.Prefs.SetUsername(resp.Username)
+		ctx.Prefs.SetAccessToken(resp.Token)
+		ctx.Prefs.SetRefreshToken(resp.RefreshToken)
+		ctx.Prefs.SetExpiresAt(time.Now().Add(middleware.TokenAliveMinutes * time.Minute).Unix())
 
 		if f != nil {
 			(*f)(resp.Token)
@@ -73,7 +70,7 @@ func ShowLoginDialog(appCtx *app.Context, f *func(token string)) {
 
 	content := container.NewVBox(form, container.NewHBox(layout.NewSpacer(), cancelBtn, doneBtn))
 
-	dlg = dialog.NewCustomWithoutButtons("Вход", content, appCtx.Win)
+	dlg = dialog.NewCustomWithoutButtons("Вход", content, ctx.Win)
 	dlg.Resize(fyne.NewSize(400, 180))
 	dlg.Show()
 

@@ -5,27 +5,31 @@ import (
 	"vado-client/internal/component/tabs/chatTab"
 	"vado-client/internal/component/tabs/hello"
 	"vado-client/internal/component/tabs/kafkaTab"
+	"vado-client/internal/component/tabs/mainTab"
 	"vado-client/internal/component/tabs/tabItem"
 	"vado-client/internal/component/tabs/testTab"
 
 	"fyne.io/fyne/v2/container"
 )
 
-const defaultTabIndex = 2
+const defaultTabIndex = 0
 
-func New(appCtx *app.Context) *container.AppTabs {
+func New(ctx *app.Context) *container.AppTabs {
 	factories := map[*container.TabItem]func() tabItem.TabContent{}
 
 	tabs := container.NewAppTabs(
 		tabItem.New("Чат", func() tabItem.TabContent {
-			return chatTab.New(appCtx)
+			return chatTab.New(ctx)
 		}, factories),
-		container.NewTabItem("Проверка", hello.NewHelloBox(appCtx)),
+		container.NewTabItem("Проверка", hello.NewHelloBox(ctx)),
 		tabItem.New("Kafka", func() tabItem.TabContent {
-			return kafkaTab.New(appCtx)
+			return kafkaTab.New(ctx)
 		}, factories),
 		tabItem.New("Test", func() tabItem.TabContent {
-			return testTab.New(appCtx)
+			return testTab.New(ctx)
+		}, factories),
+		tabItem.New("Главная", func() tabItem.TabContent {
+			return mainTab.New(ctx)
 		}, factories),
 	)
 

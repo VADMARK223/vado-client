@@ -5,7 +5,6 @@ import (
 	"time"
 	"vado-client/api/pb/hello"
 	"vado-client/internal/app"
-	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
@@ -30,18 +29,16 @@ func NewHelloBox(ctx *app.Context) *fyne.Container {
 	)
 }
 
-func sendHello(appCtx *app.Context, label *widget.Label, input *widget.Entry) {
-	clientGRPC := hello.NewHelloServiceClient(appCtx.GRPC)
+func sendHello(ctx *app.Context, label *widget.Label, input *widget.Entry) {
+	clientGRPC := hello.NewHelloServiceClient(ctx.GRPC)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 
-	token := client.GetToken(appCtx.App)
-	appCtx.Log.Debugf("Send with token: %s", token)
-	authCtx := middleware.WithAuth(appCtx, ctx)
+	authCtx := middleware.WithAuth(ctx, ctxWithTimeout)
 	resp, err := clientGRPC.SayHello(authCtx, &hello.HelloRequest{Name: input.Text})
 	if err != nil {
-		dialog.ShowInformation("Ошибка токена", err.Error(), appCtx.Win)
+		dialog.ShowInformation("Ошибка токена", err.Error(), ctx.Win)
 		return
 	}
 

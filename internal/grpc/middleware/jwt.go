@@ -5,7 +5,6 @@ import (
 	"time"
 	pb "vado-client/api/pb/auth"
 	"vado-client/internal/app"
-	"vado-client/internal/config/code"
 
 	"google.golang.org/grpc/metadata"
 )
@@ -13,10 +12,9 @@ import (
 const TokenAliveMinutes = 15
 
 func WithAuth(appCtx *app.Context, ctx context.Context) context.Context {
-	prefs := appCtx.App.Preferences()
-	access := prefs.String(code.AccessToken)
-	refresh := prefs.String(code.RefreshToken)
-	exp := time.Unix(int64(prefs.Int("expires_at")), 0)
+	access := appCtx.Prefs.AccessToken()
+	refresh := appCtx.Prefs.RefreshToken()
+	exp := time.Unix(appCtx.Prefs.ExpiresAt(), 0)
 
 	if time.Now().Before(exp) {
 		return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+access)
@@ -33,8 +31,8 @@ func WithAuth(appCtx *app.Context, ctx context.Context) context.Context {
 			return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+access)
 		}
 
-		prefs.SetString(code.AccessToken, resp.Token)
-		prefs.SetInt(code.ExpiresAt, int(time.Now().Add(TokenAliveMinutes*time.Minute).Unix()))
+		appCtx.Prefs.SetAccessToken(resp.Token)
+		appCtx.Prefs.SetExpiresAt(time.Now().Add(TokenAliveMinutes * time.Minute).Unix())
 		return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+resp.Token)
 	} else {
 		return metadata.AppendToOutgoingContext(ctx, "authorization", "Bearer "+access)

@@ -9,8 +9,8 @@ import (
 	"vado-client/internal/app"
 	"vado-client/internal/app/logger"
 	"vado-client/internal/component/common"
+	"vado-client/internal/component/common/userInfo"
 	"vado-client/internal/component/tabs"
-	"vado-client/internal/component/userInfo"
 	"vado-client/internal/config/color"
 	"vado-client/internal/grpc/client"
 	"vado-client/internal/utils"
@@ -37,10 +37,10 @@ func main() {
 	zapLogger := logger.Init(true)
 	defer func() { _ = zapLogger.Sync() }()
 
-	appCtx := app.NewAppContext(zapLogger, clientGPRC, a, w)
+	appCtx := app.NewAppCtx(zapLogger, clientGPRC, a, w)
 	appCtx.Log.Infow("Start vado-client.", "time", utils.FormatTime(time.Now()))
 
-	bottomObjs := []fyne.CanvasObject{userInfo.CreateUserInfo(appCtx), layout.NewSpacer()}
+	bottomObjs := []fyne.CanvasObject{userInfo.NewUserInfo(appCtx), layout.NewSpacer()}
 	bottomObjs = append(bottomObjs, createServerStatus(appCtx)...)
 	bottomBar := container.NewHBox(bottomObjs...)
 	root := container.NewBorder(nil, bottomBar, nil, nil, tabs.New(appCtx))
@@ -93,7 +93,7 @@ func updateIndicatorColor(appCtx *app.Context, indicator *common.Indicator) {
 }
 
 func createServerStatus(appCtx *app.Context) []fyne.CanvasObject {
-	fastModeTxt := widget.NewRichTextFromMarkdown("Server status:")
+	fastModeTxt := widget.NewRichTextFromMarkdown("Сервер:")
 	indicator := common.NewIndicator(color.Orange(), fyne.NewSize(10, 10))
 	refreshBtn := widget.NewButton("Обновить", func() {
 		updateIndicatorColor(appCtx, indicator)

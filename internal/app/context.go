@@ -2,6 +2,7 @@ package app
 
 import (
 	"vado-client/internal/app/keyman"
+	"vado-client/internal/app/prefs"
 
 	"fyne.io/fyne/v2"
 	"go.uber.org/zap"
@@ -16,15 +17,17 @@ type Context struct {
 	OnClose  []func()
 	KeyMan   *keyman.KeyManager
 	unsubEsc func()
+	Prefs    *prefs.Prefs
 }
 
-func NewAppContext(log *zap.SugaredLogger, grpc *grpc.ClientConn, a fyne.App, w fyne.Window) *Context {
+func NewAppCtx(log *zap.SugaredLogger, grpc *grpc.ClientConn, a fyne.App, w fyne.Window) *Context {
 	result := &Context{
 		Log:    log,
 		App:    a,
 		Win:    w,
 		GRPC:   grpc,
 		KeyMan: keyman.New(w.Canvas()),
+		Prefs:  prefs.New(a.Preferences()),
 	}
 
 	result.AddCloseHandler(func() {
@@ -35,7 +38,6 @@ func NewAppContext(log *zap.SugaredLogger, grpc *grpc.ClientConn, a fyne.App, w 
 
 func (a *Context) AddCloseHandler(fn func()) {
 	a.OnClose = append(a.OnClose, fn)
-	a.Log.Debugw("Added close handler", "count", len(a.OnClose))
 
 	a.Win.SetCloseIntercept(func() {
 		a.Log.Debugw("Close intercepted.")

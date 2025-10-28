@@ -6,7 +6,6 @@ import (
 	"vado-client/internal/app"
 	"vado-client/internal/component/tabs/tabItem"
 	"vado-client/internal/config/port"
-	"vado-client/internal/grpc/client"
 	"vado-client/internal/infra/kafka"
 
 	"fyne.io/fyne/v2"
@@ -83,7 +82,7 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 // sendMessage — логика отправки одного сообщения
 func (t *Tab) sendMessage() {
-	user := fmt.Sprintf("User-%s", client.GetUsername(t.cxt.App))
+	user := fmt.Sprintf("User-%s", t.cxt.Prefs.Username())
 	msg := t.input.Text
 
 	if msg == "" {

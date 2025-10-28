@@ -8,9 +8,8 @@ import (
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
 	"vado-client/internal/app/keyman"
+	"vado-client/internal/component/common/userInfo"
 	"vado-client/internal/component/tabs/tabItem"
-	"vado-client/internal/component/userInfo"
-	"vado-client/internal/grpc/client"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
@@ -74,71 +73,73 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 	scroll := container.NewVScroll(list)
 
-	updateButtons(appCtx.App, loginBtn)
+	updateButtons(appCtx, loginBtn)
 
 	input, sendBtn := newInputBox(appCtx, ctx, clientGRPC)
 	inputBox := container.NewVBox(input, sendBtn)
 
 	content := container.NewBorder(topBox, inputBox, nil, nil, scroll)
 
+	appCtx.Prefs.ChangeListeners(func() {
+		isAuth := appCtx.Prefs.IsAuth()
+		appCtx.Log.Infow("Change listeners", "isAuth", isAuth)
+	})
+
 	// Поток сообщений
-	go func() {
-		defer cancel()
-
-		for {
-			if ctx.Err() != nil {
-				return
-			}
-
-			// TODO: Тут надо проверить вообще пользователь авторизовался, прежде чем впускать в стрим
-			if !client.IsAuth(appCtx.App) {
-				continue
-			}
-
-			req := &pb.ChatStreamRequest{User: &pb.User{Id: client.GetUserID(appCtx.App), Username: client.GetUsername(appCtx.App)}}
-			stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
-			if errStream != nil {
-				appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
-				time.Sleep(2 * time.Second)
-				continue
-			}
-
-			appCtx.Log.Infow("Подключен к потоку сообщений")
+	if appCtx.Prefs.IsAuth() {
+		go func() {
+			defer cancel()
 
 			for {
-				msg, err := stream.Recv()
-				if err == io.EOF || ctx.Err() != nil {
-					appCtx.Log.Infow("Завершение потока")
-					break
-				}
-				if err != nil {
-					appCtx.Log.Errorw("Ошибка получения сообщения", "error", err)
-					break
+				if ctx.Err() != nil {
+					return
 				}
 
-				fyne.Do(func() {
-					// Не показываем первое сообщение о входе самого себя
-					if msg.Type != pb.MessageType_MESSAGE_SYSTEM || msg.User.Id != client.GetUserID(appCtx.App) {
-						errAppend := messages.Append(msg)
+				req := &pb.ChatStreamRequest{User: &pb.User{Id: appCtx.Prefs.UserID(), Username: appCtx.Prefs.Username()}}
+				stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
+				if errStream != nil {
+					appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
+					time.Sleep(2 * time.Second)
+					continue
+				}
 
-						if errAppend != nil {
-							appCtx.Log.Errorw("Error append message", "error", errAppend)
+				appCtx.Log.Infow("Подключен к потоку сообщений")
+
+				for {
+					msg, err := stream.Recv()
+					if err == io.EOF || ctx.Err() != nil {
+						appCtx.Log.Infow("Завершение потока")
+						break
+					}
+					if err != nil {
+						appCtx.Log.Errorw("Ошибка получения сообщения", "error", err)
+						break
+					}
+
+					fyne.Do(func() {
+						// Не показываем первое сообщение о входе самого себя
+						if msg.Type != pb.MessageType_MESSAGE_SYSTEM || msg.User.Id != appCtx.Prefs.UserID() {
+							errAppend := messages.Append(msg)
+
+							if errAppend != nil {
+								appCtx.Log.Errorw("Error append message", "error", errAppend)
+							}
 						}
-					}
 
-					if msg.Type == pb.MessageType_MESSAGE_SYSTEM {
-						updateCountText(msg.UsersCount)
-					}
-				})
+						if msg.Type == pb.MessageType_MESSAGE_SYSTEM {
+							updateCountText(msg.UsersCount)
+						}
+					})
+				}
+
+				// Если был обрыв — попробуем переподключиться через 2 секунды
+				time.Sleep(2 * time.Second)
 			}
-
-			// Если был обрыв — попробуем переподключиться через 2 секунды
-			time.Sleep(2 * time.Second)
-		}
-	}()
+		}()
+	}
 
 	appCtx.App.Preferences().AddChangeListener(func() {
-		updateButtons(appCtx.App, loginBtn)
+		updateButtons(appCtx, loginBtn)
 	})
 
 	appCtx.AddCloseHandler(func() {
@@ -162,8 +163,8 @@ func updateCountText(count uint32) {
 	}
 }
 
-func updateButtons(a fyne.App, loginBtn *widget.Button) {
-	if client.IsAuth(a) {
+func updateButtons(appCtx *app.Context, loginBtn *widget.Button) {
+	if appCtx.Prefs.IsAuth() {
 		loginBtn.Hide()
 	} else {
 		loginBtn.Show()
