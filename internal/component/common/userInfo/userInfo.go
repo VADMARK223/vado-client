@@ -3,6 +3,7 @@ package userInfo
 import (
 	"fmt"
 	"vado-client/internal/app"
+	"vado-client/internal/app/prefs"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -10,11 +11,10 @@ import (
 )
 
 func NewUserInfo(ctx *app.Context) *fyne.Container {
-	username := ctx.Prefs.Username()
-	userNameText := widget.NewRichTextFromMarkdown(fmt.Sprintf("Пользователь: **%s**", username))
+	usernameTxt := widget.NewRichTextFromMarkdown("")
+	updateUsernameText(ctx.Prefs, usernameTxt)
 	ctx.App.Preferences().AddChangeListener(func() {
-		userNameText.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", username))
-		userNameText.Refresh()
+		updateUsernameText(ctx.Prefs, usernameTxt)
 	})
 
 	enterBtn := widget.NewButton("Вход", func() {
@@ -34,7 +34,16 @@ func NewUserInfo(ctx *app.Context) *fyne.Container {
 		updateVisibility(ctx, enterBtn, quitBtn)
 	})
 
-	return container.NewHBox(userNameText, enterBtn, quitBtn)
+	return container.NewHBox(usernameTxt, enterBtn, quitBtn)
+}
+
+func updateUsernameText(prefs *prefs.Prefs, txt *widget.RichText) {
+	txt.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", func() string {
+		if prefs.Username() != "" {
+			return prefs.Username()
+		}
+		return "Гость"
+	}()))
 }
 
 func updateVisibility(ctx *app.Context, enterBtn *widget.Button, quitBnt *widget.Button) {

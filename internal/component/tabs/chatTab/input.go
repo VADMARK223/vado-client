@@ -2,6 +2,7 @@ package chatTab
 
 import (
 	"context"
+	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
 	"vado-client/internal/grpc/middleware"
@@ -10,24 +11,24 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-func newInputBox(appCtx *app.Context, ctx context.Context, clientGRPC pb.ChatServiceClient) (*widget.Entry, *widget.Button) {
+func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient) (*widget.Entry, *widget.Button) {
 	msgInput := widget.NewEntry()
-	msgInput.SetText(appCtx.Prefs.LastInput())
+	msgInput.SetText(ctx.Prefs.LastInput())
 	msgInput.SetPlaceHolder("Сообщение...")
 
-	sendBtn := createSendBtn(appCtx, ctx, msgInput, clientGRPC)
+	sendBtn := createSendBtn(ctx, msgInput, clientGRPC)
 	updateEnableSendBtn(sendBtn, msgInput.Text)
 	msgInput.OnChanged = func(text string) {
 		updateEnableSendBtn(sendBtn, text)
 	}
-	updateSendBtn(appCtx, sendBtn)
+	updateSendBtn(ctx, sendBtn)
 
-	appCtx.App.Preferences().AddChangeListener(func() {
-		updateSendBtn(appCtx, sendBtn)
+	ctx.App.Preferences().AddChangeListener(func() {
+		updateSendBtn(ctx, sendBtn)
 	})
 
-	appCtx.AddCloseHandler(func() {
-		appCtx.Prefs.SetLastInput(msgInput.Text)
+	ctx.AddCloseHandler(func() {
+		ctx.Prefs.SetLastInput(msgInput.Text)
 	})
 
 	msgInput.OnSubmitted = func(text string) {
@@ -53,14 +54,17 @@ func updateSendBtn(ctx *app.Context, sendBtn *widget.Button) {
 	}
 }
 
-func createSendBtn(appCtx *app.Context, ctx context.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
+func createSendBtn(appCtx *app.Context, input *widget.Entry, grpc pb.ChatServiceClient) *widget.Button {
 	result := widget.NewButton("Отправить", func() {
 		text := input.Text
 		if text == "" {
 			dialog.ShowInformation("Предупреждение", "Пустое сообщение", appCtx.Win)
 			return
 		}
-		authCtx := middleware.WithAuth(appCtx, ctx)
+		ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+		defer cancel()
+
+		authCtx := middleware.WithAuth(appCtx, ctxWithTimeout)
 
 		_, errSendMessage := grpc.SendMessage(authCtx, &pb.ChatMessage{
 			User: &pb.User{Id: appCtx.Prefs.UserID(), Username: appCtx.Prefs.Username()},

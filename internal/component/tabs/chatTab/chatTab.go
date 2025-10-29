@@ -1,16 +1,12 @@
 package chatTab
 
 import (
-	"context"
 	"fmt"
-	"io"
-	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
 	"vado-client/internal/app/keyman"
 	"vado-client/internal/component/common/userInfo"
 	"vado-client/internal/component/tabs/tabItem"
-	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
@@ -44,23 +40,14 @@ func (t *ChatTab) Canvas() fyne.CanvasObject {
 	return t.Container
 }
 
-var userCountText = widget.NewRichTextWithText("")
-
 func New(appCtx *app.Context) tabItem.TabContent {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
-	ctx, cancel := context.WithCancel(context.Background())
 
-	controlBox := container.NewHBox(widget.NewButton("1", func() {}), widget.NewButton("2", func() {}))
-	controlBox.Hide()
-	loginBtn := widget.NewButton("Вход", func() {
-		userInfo.ShowLoginDialog(appCtx, nil)
-	})
-
-	updateCountText(0)
-
-	topBox := container.NewVBox(controlBox, userCountText)
-
+	infoText := widget.NewRichTextFromMarkdown("Необходимо выполнить вход.")
+	userCountTxt := widget.NewRichTextWithText("")
+	updateCountText(userCountTxt, 0)
 	messages := binding.NewUntypedList()
+
 	list := widget.NewListWithData(
 		messages,
 		func() fyne.CanvasObject { return NewMessageItem() },
@@ -73,79 +60,53 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 	scroll := container.NewVScroll(list)
 
+	loginBtn := widget.NewButton("Вход", func() {
+		userInfo.ShowLoginDialog(appCtx, nil)
+	})
+
 	updateButtons(appCtx, loginBtn)
 
-	input, sendBtn := newInputBox(appCtx, ctx, clientGRPC)
+	input, sendBtn := newInputBox(appCtx, clientGRPC)
 	inputBox := container.NewVBox(input, sendBtn)
 
-	content := container.NewBorder(topBox, inputBox, nil, nil, scroll)
+	content := container.NewBorder(container.NewVBox(infoText, userCountTxt), inputBox, nil, nil, scroll)
 
-	appCtx.Prefs.ChangeListeners(func() {
+	manager := NewChatStreamManager(appCtx, clientGRPC, messages, func(count uint32) {
+		updateCountText(userCountTxt, count)
+	})
+
+	updateVisibility := func() {
 		isAuth := appCtx.Prefs.IsAuth()
 		appCtx.Log.Infow("Change listeners", "isAuth", isAuth)
-	})
-
-	// Поток сообщений
-	if appCtx.Prefs.IsAuth() {
-		go func() {
-			defer cancel()
-
-			for {
-				if ctx.Err() != nil {
-					return
-				}
-
-				req := &pb.ChatStreamRequest{User: &pb.User{Id: appCtx.Prefs.UserID(), Username: appCtx.Prefs.Username()}}
-				stream, errStream := clientGRPC.ChatStream(middleware.WithAuth(appCtx, ctx), req)
-				if errStream != nil {
-					appCtx.Log.Errorw("Ошибка подключения к потоку", "error", errStream)
-					time.Sleep(2 * time.Second)
-					continue
-				}
-
-				appCtx.Log.Infow("Подключен к потоку сообщений")
-
-				for {
-					msg, err := stream.Recv()
-					if err == io.EOF || ctx.Err() != nil {
-						appCtx.Log.Infow("Завершение потока")
-						break
-					}
-					if err != nil {
-						appCtx.Log.Errorw("Ошибка получения сообщения", "error", err)
-						break
-					}
-
-					fyne.Do(func() {
-						// Не показываем первое сообщение о входе самого себя
-						if msg.Type != pb.MessageType_MESSAGE_SYSTEM || msg.User.Id != appCtx.Prefs.UserID() {
-							errAppend := messages.Append(msg)
-
-							if errAppend != nil {
-								appCtx.Log.Errorw("Error append message", "error", errAppend)
-							}
-						}
-
-						if msg.Type == pb.MessageType_MESSAGE_SYSTEM {
-							updateCountText(msg.UsersCount)
-						}
-					})
-				}
-
-				// Если был обрыв — попробуем переподключиться через 2 секунды
-				time.Sleep(2 * time.Second)
-			}
-		}()
+		if isAuth {
+			infoText.Hide()
+			userCountTxt.Show()
+			loginBtn.Hide()
+			inputBox.Show()
+		} else {
+			infoText.Show()
+			userCountTxt.Hide()
+			loginBtn.Show()
+			inputBox.Hide()
+		}
 	}
 
-	appCtx.App.Preferences().AddChangeListener(func() {
-		updateButtons(appCtx, loginBtn)
-	})
+	appCtx.Prefs.ChangeListeners(func() {
+		fyne.Do(func() {
+			updateVisibility()
+		})
 
-	appCtx.AddCloseHandler(func() {
-		appCtx.Log.Debugw("Chat cancel context.")
-		cancel()
+		if appCtx.Prefs.IsAuth() {
+			manager.Start()
+		} else {
+			manager.Stop()
+		}
 	})
+	updateVisibility()
+
+	if appCtx.Prefs.IsAuth() {
+		manager.Start()
+	}
 
 	return &ChatTab{
 		Container: content,
@@ -155,11 +116,11 @@ func New(appCtx *app.Context) tabItem.TabContent {
 	}
 }
 
-func updateCountText(count uint32) {
+func updateCountText(txt *widget.RichText, count uint32) {
 	if count == 1 {
-		userCountText.ParseMarkdown("В комнате пока только вы.")
+		txt.ParseMarkdown("В комнате пока только вы.")
 	} else {
-		userCountText.ParseMarkdown(fmt.Sprintf("В комнате пользователей: **%v**", count))
+		txt.ParseMarkdown(fmt.Sprintf("В комнате пользователей: **%v**", count))
 	}
 }
 
