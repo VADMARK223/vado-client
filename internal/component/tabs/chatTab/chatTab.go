@@ -2,6 +2,7 @@ package chatTab
 
 import (
 	"fmt"
+	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
 	"vado-client/internal/app/keyman"
@@ -58,7 +59,51 @@ func New(appCtx *app.Context) tabItem.TabContent {
 			messageItem.SetData(messageData)
 		})
 
-	scroll := container.NewVScroll(list)
+	scrollToDown := func() {
+		fyne.Do(func() {
+			list.Refresh()
+			n := messages.Length()
+			if n > 0 {
+				list.ScrollTo(n - 1)
+			}
+		})
+	}
+
+	scrollDownBtn := widget.NewButton("Вниз", func() {
+		scrollToDown()
+	})
+	scrollDownBtn.Resize(fyne.NewSize(45, 40))
+
+	go func() {
+		ticker := time.NewTicker(500 * time.Millisecond)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			fyne.Do(func() {
+				scrollDownBtn.Move(fyne.NewPos(
+					list.Size().Width-scrollDownBtn.Size().Width-8,
+					list.Size().Height-scrollDownBtn.Size().Height-8))
+				totalItems := list.Length()
+				if totalItems == 0 {
+					scrollDownBtn.Hide()
+					return
+				}
+
+				itemHeight := list.MinSize().Height
+				itemsH := itemHeight * float32(totalItems)
+
+				if itemsH > list.GetScrollOffset()+list.Size().Height {
+					scrollDownBtn.Show()
+				} else {
+					scrollDownBtn.Hide()
+				}
+			})
+		}
+	}()
+
+	messages.AddListener(binding.NewDataListener(func() {
+		scrollToDown()
+	}))
 
 	loginBtn := widget.NewButton("Вход", func() {
 		userInfo.ShowLoginDialog(appCtx, nil)
@@ -69,7 +114,10 @@ func New(appCtx *app.Context) tabItem.TabContent {
 	input, sendBtn := newInputBox(appCtx, clientGRPC)
 	inputBox := container.NewVBox(input, sendBtn)
 
-	content := container.NewBorder(container.NewVBox(infoText, userCountTxt), inputBox, nil, nil, scroll)
+	scrollWithBtn := container.NewStack(list, container.NewWithoutLayout(scrollDownBtn))
+	scrollDownBtn.Hide()
+
+	content := container.NewBorder(container.NewVBox(infoText, userCountTxt), inputBox, nil, nil, scrollWithBtn)
 
 	manager := NewChatStreamManager(appCtx, clientGRPC, messages, func(count uint32) {
 		updateCountText(userCountTxt, count)
