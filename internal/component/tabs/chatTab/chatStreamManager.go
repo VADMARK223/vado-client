@@ -74,17 +74,7 @@ func (m *ChatStreamManager) Start() {
 						m.appCtx.Log.Debug("stream closed by client")
 						return
 					}
-					m.appCtx.Log.Errorw("Error receiving message", "error", err)
-					break
-				}
-
-				if err != nil {
-					if errors.Is(err, io.EOF) || errors.Is(err, context.Canceled) || ctx.Err() != nil {
-						m.appCtx.Log.Info("stream closed by client")
-						return
-					}
-					m.appCtx.Log.Errorw("Error receiving message", "error", err)
-
+					m.appCtx.Log.Warnw("Error receiving message", "error", err)
 					break
 				}
 

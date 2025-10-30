@@ -3,6 +3,7 @@ package kafka
 import (
 	"context"
 	"time"
+	"vado-client/internal/config/port"
 
 	"github.com/segmentio/kafka-go"
 	"go.uber.org/zap"
@@ -13,8 +14,8 @@ type Producer struct {
 	log    *zap.SugaredLogger
 }
 
-func NewProducer(broker, topic string, log *zap.SugaredLogger) *Producer {
-	brokers := []string{broker}
+func NewProducer(topic string, log *zap.SugaredLogger) *Producer {
+	brokers := []string{"localhost:" + port.Kafka}
 	writer := &kafka.Writer{
 		Addr:                   kafka.TCP(brokers...),
 		Topic:                  topic,
@@ -29,7 +30,7 @@ func NewProducer(broker, topic string, log *zap.SugaredLogger) *Producer {
 }
 
 // SendMessage — безопасная отправка сообщения с ретраями и логами
-func (p *Producer) SendMessage(_ context.Context, key, value []byte) error {
+func (p *Producer) SendMessage(key, value []byte) error {
 	msg := kafka.Message{
 		Key:   key,
 		Value: value,

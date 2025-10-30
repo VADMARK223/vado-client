@@ -1,11 +1,9 @@
 package kafkaTab
 
 import (
-	"context"
 	"fmt"
 	"vado-client/internal/app"
 	"vado-client/internal/component/tabs/tabItem"
-	"vado-client/internal/config/port"
 	"vado-client/internal/infra/kafka"
 
 	"fyne.io/fyne/v2"
@@ -24,9 +22,7 @@ type Tab struct {
 
 func (t *Tab) Open() {
 	t.cxt.Log.Debugw("Kafka tab opened")
-
-	broker := "localhost:" + port.Kafka
-	producer := kafka.NewProducer(broker, "chat", t.cxt.Log)
+	producer := kafka.NewProducer("chat", t.cxt.Log)
 	t.producer = producer
 
 	t.btn.Enable()
@@ -94,7 +90,7 @@ func (t *Tab) sendMessage() {
 		return
 	}
 
-	err := t.producer.SendMessage(context.Background(), []byte(user), []byte(msg))
+	err := t.producer.SendMessage([]byte(user), []byte(msg))
 	if err != nil {
 		dialog.ShowError(fmt.Errorf("не удалось отправить сообщение: %v", err), t.cxt.Win)
 		return
