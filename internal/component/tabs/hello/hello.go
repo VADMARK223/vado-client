@@ -5,6 +5,7 @@ import (
 	"time"
 	"vado-client/api/pb/hello"
 	"vado-client/internal/app"
+	"vado-client/internal/component/common/userInfo"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
@@ -30,6 +31,10 @@ func NewHelloBox(ctx *app.Context) *fyne.Container {
 }
 
 func sendHello(ctx *app.Context, label *widget.Label, input *widget.Entry) {
+	if ctx.Prefs.IsAuth() == false {
+		userInfo.ShowLoginDialog(ctx, nil)
+		return
+	}
 	clientGRPC := hello.NewHelloServiceClient(ctx.GRPC)
 
 	ctxWithTimeout, cancel := context.WithTimeout(context.Background(), 3*time.Second)
