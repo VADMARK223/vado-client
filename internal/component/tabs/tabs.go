@@ -21,7 +21,7 @@ func New(ctx *app.Context) *container.AppTabs {
 		tabItem.New("Чат", func() tabItem.TabContent {
 			return chatTab.New(ctx)
 		}, factories),
-		container.NewTabItem("Проверка", hello.NewHelloBox(ctx)),
+		container.NewTabItem("SeyHello", hello.NewHelloBox(ctx)),
 		tabItem.New("Kafka", func() tabItem.TabContent {
 			return kafkaTab.New(ctx)
 		}, factories),

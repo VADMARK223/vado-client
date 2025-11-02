@@ -43,7 +43,8 @@ func (p *Producer) SendMessage(key, value []byte) error {
 		return err
 	}
 
-	p.log.Debugw("Kafka message sent", "key", string(key), "size", len(value))
+	topic := p.writer.Topic
+	p.log.Debugw("Kafka message sent", "topic", topic, "key", string(key), "size", len(value))
 	return nil
 }
 

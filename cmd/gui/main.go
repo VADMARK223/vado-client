@@ -18,8 +18,10 @@ import (
 	"fyne.io/fyne/v2"
 	f "fyne.io/fyne/v2/app"
 	"fyne.io/fyne/v2/container"
+	"fyne.io/fyne/v2/dialog"
 	"fyne.io/fyne/v2/layout"
 	"fyne.io/fyne/v2/widget"
+	"github.com/niemeyer/pretty"
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
@@ -70,18 +72,17 @@ func newWindow(a fyne.App, envAppID string) fyne.Window {
 	return w
 }
 
-func getStatusServer(appCtx *app.Context) bool {
+func getStatusServer(appCtx *app.Context) (result bool) {
 	serverClient := pbPing.NewPingServiceClient(appCtx.GRPC)
 	pingResp, errPing := serverClient.Ping(context.Background(), &emptypb.Empty{})
 
-	var result bool
 	if errPing != nil {
-		result = false
+		dialog.ShowInformation("Ошибка", pretty.Sprintf("%s", errPing), appCtx.Win)
 	} else {
 		result = pingResp.Run
 	}
-
-	return result
+	appCtx.Log.Infow("Get status server.", "errPing", errPing)
+	return
 }
 
 func updateIndicatorColor(appCtx *app.Context, indicator *common.Indicator) {

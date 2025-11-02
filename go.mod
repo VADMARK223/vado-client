@@ -4,6 +4,7 @@ go 1.25
 
 require (
 	fyne.io/fyne/v2 v2.6.3
+	github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e
 	github.com/segmentio/kafka-go v0.4.49
 	go.uber.org/zap v1.27.0
 	google.golang.org/grpc v1.76.0
@@ -30,6 +31,7 @@ require (
 	github.com/jeandeaual/go-locale v0.0.0-20250612000132-0ef82f21eade // indirect
 	github.com/jsummers/gobmp v0.0.0-20230614200233-a9de23ed2e25 // indirect
 	github.com/klauspost/compress v1.15.9 // indirect
+	github.com/kr/text v0.2.0 // indirect
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
 	github.com/nicksnyder/go-i18n/v2 v2.5.1 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
