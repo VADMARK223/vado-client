@@ -5,6 +5,7 @@ import (
 	"time"
 	pb "vado-client/api/pb/chat"
 	"vado-client/internal/app"
+	"vado-client/internal/component/common"
 	"vado-client/internal/grpc/middleware"
 
 	"fyne.io/fyne/v2"
@@ -13,15 +14,15 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-const maxLen = 50
+const maxLen = 35
 
 func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *widget.Button) *fyne.Container {
-	msgInput := widget.NewEntry()
+	msgInput := common.NewVadoEntry()
 	msgInput.SetText(ctx.Prefs.LastInput())
 	msgInput.SetPlaceHolder("Сообщение...")
 
 	sendBtn.OnTapped = func() {
-		text := msgInput.Text
+		text := msgInput.Text()
 		if text == "" {
 			dialog.ShowInformation("Предупреждение", "Пустое сообщение", ctx.Win)
 			return
@@ -42,14 +43,14 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 		msgInput.SetText("")
 	}
 
-	updateEnableSendBtn(sendBtn, msgInput.Text)
-	msgInput.OnChanged = func(text string) {
+	updateEnableSendBtn(sendBtn, msgInput.Text())
+	msgInput.OnChanged(func(text string) {
 		runes := []rune(text)
 		if len(runes) > maxLen {
 			msgInput.SetText(string(runes[:maxLen]))
 		}
 		updateEnableSendBtn(sendBtn, text)
-	}
+	})
 	updateSendBtn(ctx, sendBtn)
 
 	ctx.App.Preferences().AddChangeListener(func() {
@@ -57,16 +58,14 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 	})
 
 	ctx.AddCloseHandler(func() {
-		ctx.Prefs.SetLastInput(msgInput.Text)
+		ctx.Prefs.SetLastInput(msgInput.Text())
 	})
 
-	msgInput.OnSubmitted = func(text string) {
+	msgInput.OnSubmitted(func(text string) {
 		sendBtn.OnTapped()
-	}
+	})
 
-	//inputBox := container.NewHBox(msgInput, widget.NewButton("b", nil))
-	//return container.NewVBox(inputBox, sendBtn)
-	return container.NewVBox(msgInput, sendBtn)
+	return container.NewBorder(nil, nil, nil, sendBtn, msgInput)
 }
 
 func updateEnableSendBtn(btn *widget.Button, text string) {
