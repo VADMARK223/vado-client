@@ -7,14 +7,13 @@ import (
 	"vado-client/internal/component/tabs/kafkaTab"
 	"vado-client/internal/component/tabs/mainTab"
 	"vado-client/internal/component/tabs/tabItem"
-	"vado-client/internal/component/tabs/testTab"
 
 	"fyne.io/fyne/v2/container"
 )
 
-const defaultTabIndex = 0
-
 func New(ctx *app.Context) *container.AppTabs {
+	defaultTabIndex := ctx.Prefs.LastTabIndex()
+
 	factories := map[*container.TabItem]func() tabItem.TabContent{}
 
 	tabs := container.NewAppTabs(
@@ -24,9 +23,6 @@ func New(ctx *app.Context) *container.AppTabs {
 		container.NewTabItem("SeyHello", hello.NewHelloBox(ctx)),
 		tabItem.New("Kafka", func() tabItem.TabContent {
 			return kafkaTab.New(ctx)
-		}, factories),
-		tabItem.New("Test", func() tabItem.TabContent {
-			return testTab.New(ctx)
 		}, factories),
 		tabItem.New("Главная", func() tabItem.TabContent {
 			return mainTab.New(ctx)
@@ -64,6 +60,7 @@ func New(ctx *app.Context) *container.AppTabs {
 		}
 	}
 
+	ctx.Log.Debugw("Last index", "index", defaultTabIndex)
 	if len(tabs.Items) > 0 {
 		if defaultTabIndex == 0 {
 			item := tabs.Items[defaultTabIndex]
@@ -74,6 +71,11 @@ func New(ctx *app.Context) *container.AppTabs {
 			tabs.SelectIndex(defaultTabIndex)
 		}
 	}
+
+	ctx.AddCloseHandler(func() {
+		ctx.Log.Debugw("Last index", "index", tabs.SelectedIndex())
+		ctx.Prefs.SetLastTabIndex(tabs.SelectedIndex())
+	})
 
 	return tabs
 }

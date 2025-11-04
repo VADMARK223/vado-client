@@ -1,5 +1,7 @@
 package prefs
 
+// /home/vadmark/.var/app/com.jetbrains.GoLand/config/fyne/vado-client
+
 import (
 	"strconv"
 	"time"
@@ -11,9 +13,10 @@ type Key string
 
 const (
 	LastInput    = "last_input"
+	LastTabIndex = "last_tab_index"
 	UserID       = "user_id"
 	Username     = "username"
-	AccessToken  = "access_token" // /home/vadmark/.var/app/com.jetbrains.GoLand/config/fyne/vado-client
+	AccessToken  = "access_token"
 	RefreshToken = "refresh_token"
 	ExpiresAt    = "expires_at"
 )
@@ -81,6 +84,19 @@ func (pr *Prefs) LastInput() string {
 
 func (pr *Prefs) SetLastInput(value string) {
 	pr.p.SetString(LastInput, value)
+}
+
+func (pr *Prefs) LastTabIndex() int {
+	strLastTabIndex := pr.p.String(LastTabIndex)
+	result, err := strconv.Atoi(strLastTabIndex)
+	if err != nil {
+		return 0
+	}
+	return result
+}
+
+func (pr *Prefs) SetLastTabIndex(value int) {
+	pr.p.SetString(LastTabIndex, strconv.Itoa(value))
 }
 
 func (pr *Prefs) AccessToken() string {
