@@ -111,8 +111,8 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 	updateButtons(appCtx, loginBtn)
 
-	input, sendBtn := newInputBox(appCtx, clientGRPC)
-	inputBox := container.NewVBox(input, sendBtn)
+	sendBtn := widget.NewButton("Отправить", nil)
+	inputBox := newInputBox(appCtx, clientGRPC, sendBtn)
 
 	scrollWithBtn := container.NewStack(list, container.NewWithoutLayout(scrollDownBtn))
 	scrollDownBtn.Hide()
