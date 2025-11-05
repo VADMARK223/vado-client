@@ -1,7 +1,11 @@
 package common
 
 import (
+	"image/color"
+
 	"fyne.io/fyne/v2"
+	"fyne.io/fyne/v2/canvas"
+	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/driver/desktop"
 	"fyne.io/fyne/v2/widget"
 )
@@ -10,7 +14,13 @@ type VadoIconButton struct {
 	widget.BaseWidget
 	icon     fyne.Resource
 	onTapped func()
+
 	disabled bool
+	hovered  bool
+
+	bg   *canvas.Circle  // фон-индикатор (кружок)
+	img  *canvas.Image   // сама иконка
+	root *fyne.Container // renderer root
 }
 
 func NewVadoIconButton(icon fyne.Resource, tapped func()) *VadoIconButton {
@@ -20,8 +30,24 @@ func NewVadoIconButton(icon fyne.Resource, tapped func()) *VadoIconButton {
 }
 
 func (b *VadoIconButton) CreateRenderer() fyne.WidgetRenderer {
-	img := widget.NewIcon(b.icon)
-	return widget.NewSimpleRenderer(img)
+	// фон
+	b.bg = canvas.NewCircle(color.NRGBA{0, 0, 0, 0}) // прозрачный по умолчанию
+	b.bg.StrokeWidth = 0
+
+	// иконка
+	b.img = canvas.NewImageFromResource(b.icon)
+	b.img.FillMode = canvas.ImageFillContain
+	b.img.Translucency = 0.0
+
+	// кладём иконку поверх круга
+	b.root = container.NewStack(b.bg, b.img)
+
+	b.updateVisualState()
+	return widget.NewSimpleRenderer(b.root)
+}
+
+func (b *VadoIconButton) MinSize() fyne.Size {
+	return fyne.NewSize(24, 24)
 }
 
 func (b *VadoIconButton) Tapped(*fyne.PointEvent) {
@@ -35,11 +61,14 @@ func (b *VadoIconButton) Tapped(*fyne.PointEvent) {
 
 func (b *VadoIconButton) Disable() {
 	b.disabled = true
+	b.hovered = false
+	b.updateVisualState()
 	b.Refresh()
 }
 
 func (b *VadoIconButton) Enable() {
 	b.disabled = false
+	b.updateVisualState()
 	b.Refresh()
 }
 
@@ -54,6 +83,40 @@ func (b *VadoIconButton) Cursor() desktop.Cursor {
 	return desktop.PointerCursor // курсор "рука"
 }
 
-func (b *VadoIconButton) MouseIn(*desktop.MouseEvent)    {}
-func (b *VadoIconButton) MouseOut()                      {}
+func (b *VadoIconButton) updateVisualState() {
+	if b.bg == nil || b.img == nil {
+		return
+	}
+
+	switch {
+	case b.disabled:
+		// тусклая иконка, еле заметный фон
+		b.img.Translucency = 0.5
+		b.bg.FillColor = color.NRGBA{0, 0, 0, 0} // без подсветки
+	case b.hovered:
+		// яркая иконка, мягкий серый круг
+		b.img.Translucency = 0.0
+		b.bg.FillColor = color.NRGBA{220, 220, 220, 80}
+	default:
+		// нормальное состояние
+		b.img.Translucency = 0.0
+		b.bg.FillColor = color.NRGBA{0, 0, 0, 0}
+	}
+
+	canvas.Refresh(b.bg)
+	canvas.Refresh(b.img)
+}
+
+func (b *VadoIconButton) MouseIn(*desktop.MouseEvent) {
+	if b.disabled {
+		return
+	}
+	b.hovered = true
+	b.updateVisualState()
+}
+
+func (b *VadoIconButton) MouseOut() {
+	b.hovered = false
+	b.updateVisualState()
+}
 func (b *VadoIconButton) MouseMoved(*desktop.MouseEvent) {}
