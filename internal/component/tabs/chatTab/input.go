@@ -14,12 +14,11 @@ import (
 	"fyne.io/fyne/v2/widget"
 )
 
-const maxLen = 35
-
 func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *widget.Button) *fyne.Container {
 	msgInput := common.NewVadoEntry()
+	msgInput.SetMaxLen(30)
 	msgInput.SetText(ctx.Prefs.LastInput())
-	msgInput.SetPlaceHolder("Сообщение...")
+	msgInput.SetPlaceHolder("White a message...")
 
 	sendBtn.OnTapped = func() {
 		text := msgInput.Text()
@@ -45,10 +44,6 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 
 	updateEnableSendBtn(sendBtn, msgInput.Text())
 	msgInput.OnChanged(func(text string) {
-		runes := []rune(text)
-		if len(runes) > maxLen {
-			msgInput.SetText(string(runes[:maxLen]))
-		}
 		updateEnableSendBtn(sendBtn, text)
 	})
 	updateSendBtn(ctx, sendBtn)
