@@ -14,8 +14,11 @@ type VadoEntry struct {
 	widget.BaseWidget
 	entry     *widget.Entry
 	counter   *widget.Label
-	clearBtn  *widget.Button
+	clearBtn  *VadoIconButton
 	container *fyne.Container
+
+	OnChanged   func(string)
+	OnSubmitted func(string)
 
 	userOnChanged func(string)
 	maxLen        int
@@ -26,36 +29,20 @@ func NewVadoEntry() *VadoEntry {
 	e.ExtendBaseWidget(e)
 
 	e.entry = widget.NewEntry()
-
-	e.clearBtn = widget.NewButtonWithIcon("", theme.CancelIcon(), func() {
+	e.entry.OnSubmitted = func(s string) {
+		if e.OnSubmitted != nil {
+			e.OnSubmitted(s)
+		}
+	}
+	e.clearBtn = NewVadoIconButton(theme.CancelIcon(), func() {
 		e.entry.SetText("")
 	})
-	e.clearBtn.Importance = widget.LowImportance
 	e.clearBtn.Disable()
 
 	e.counter = widget.NewLabel("")
 	e.counter.Hide()
 
-	e.entry.OnChanged = func(s string) {
-		if e.maxLen > 0 {
-			runes := []rune(s)
-			if len(runes) > e.maxLen {
-				e.entry.SetText(string(runes[:e.maxLen]))
-			}
-
-			e.updateCounter()
-		}
-
-		if s == "" {
-			e.clearBtn.Disable()
-		} else {
-			e.clearBtn.Enable()
-		}
-
-		if e.userOnChanged != nil {
-			e.userOnChanged(s)
-		}
-	}
+	e.entry.OnChanged = e.internalOnChanged
 
 	rightBox := container.NewHBox(e.counter, e.clearBtn)
 	alignedRight := container.NewBorder(nil, nil, nil, rightBox, layout.NewSpacer())
@@ -64,36 +51,50 @@ func NewVadoEntry() *VadoEntry {
 	return e
 }
 
-func (b *VadoEntry) CreateRenderer() fyne.WidgetRenderer {
-	return widget.NewSimpleRenderer(b.container)
+func (e *VadoEntry) internalOnChanged(s string) {
+	if e.maxLen > 0 {
+		runes := []rune(s)
+		if len(runes) > e.maxLen {
+			e.entry.OnChanged = nil
+			e.entry.SetText(string(runes[:e.maxLen]))
+			e.entry.OnChanged = e.internalOnChanged
+			return
+		}
+		e.updateCounter()
+	}
+
+	if s == "" {
+		e.clearBtn.Disable()
+	} else {
+		e.clearBtn.Enable()
+	}
+	if e.userOnChanged != nil {
+		e.userOnChanged(s)
+	}
 }
 
-func (b *VadoEntry) Text() string {
-	return b.entry.Text
+func (e *VadoEntry) CreateRenderer() fyne.WidgetRenderer {
+	return widget.NewSimpleRenderer(e.container)
 }
 
-func (b *VadoEntry) SetText(input string) {
-	b.entry.SetText(input)
+func (e *VadoEntry) Text() string {
+	return e.entry.Text
 }
 
-func (b *VadoEntry) SetPlaceHolder(s string) {
-	b.entry.SetPlaceHolder(s)
+func (e *VadoEntry) SetText(input string) {
+	e.entry.SetText(input)
 }
 
-func (b *VadoEntry) OnChanged(fn func(string)) {
-	b.userOnChanged = fn
+func (e *VadoEntry) SetPlaceHolder(s string) {
+	e.entry.SetPlaceHolder(s)
 }
 
-func (b *VadoEntry) OnSubmitted(fn func(string)) {
-	b.entry.OnSubmitted = fn
+func (e *VadoEntry) SetMaxLen(maxLen int) {
+	e.maxLen = maxLen
+	e.counter.Show()
+	e.updateCounter()
 }
 
-func (b *VadoEntry) SetMaxLen(maxLen int) {
-	b.maxLen = maxLen
-	b.counter.Show()
-	b.updateCounter()
-}
-
-func (b *VadoEntry) updateCounter() {
-	b.counter.SetText(fmt.Sprintf("%d/%d", len([]rune(b.entry.Text)), b.maxLen))
+func (e *VadoEntry) updateCounter() {
+	e.counter.SetText(fmt.Sprintf("%d/%d", len([]rune(e.entry.Text)), e.maxLen))
 }

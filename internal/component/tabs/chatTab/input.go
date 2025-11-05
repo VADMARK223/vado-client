@@ -43,9 +43,11 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 	}
 
 	updateEnableSendBtn(sendBtn, msgInput.Text())
-	msgInput.OnChanged(func(text string) {
+
+	msgInput.OnChanged = func(text string) {
 		updateEnableSendBtn(sendBtn, text)
-	})
+	}
+
 	updateSendBtn(ctx, sendBtn)
 
 	ctx.App.Preferences().AddChangeListener(func() {
@@ -56,9 +58,9 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 		ctx.Prefs.SetLastInput(msgInput.Text())
 	})
 
-	msgInput.OnSubmitted(func(text string) {
+	msgInput.OnSubmitted = func(text string) {
 		sendBtn.OnTapped()
-	})
+	}
 
 	return container.NewBorder(nil, nil, nil, sendBtn, msgInput)
 }
