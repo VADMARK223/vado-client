@@ -68,7 +68,7 @@ func newWindow(a fyne.App, envAppID string) fyne.Window {
 		title = fmt.Sprintf("Vado client (%s)", envAppID)
 	}
 	w := a.NewWindow(title)
-	w.Resize(fyne.NewSize(450, 703))
+	w.Resize(fyne.NewSize(455, 703))
 	return w
 }
 
@@ -94,9 +94,9 @@ func updateIndicatorColor(appCtx *app.Context, indicator *common.Indicator) {
 }
 
 func createServerStatus(appCtx *app.Context) []fyne.CanvasObject {
-	fastModeTxt := widget.NewRichTextFromMarkdown("Сервер:")
+	fastModeTxt := widget.NewRichTextFromMarkdown("Server:")
 	indicator := common.NewIndicator(color.Orange(), fyne.NewSize(10, 10))
-	refreshBtn := widget.NewButton("Обновить", func() {
+	refreshBtn := widget.NewButton("Refresh", func() {
 		updateIndicatorColor(appCtx, indicator)
 	})
 	updateIndicatorColor(appCtx, indicator)

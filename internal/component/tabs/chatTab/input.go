@@ -16,7 +16,7 @@ import (
 
 func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *widget.Button) *fyne.Container {
 	msgInput := common.NewVadoEntry()
-	msgInput.SetMaxLen(30)
+	msgInput.SetMaxLen(40)
 	msgInput.SetText(ctx.Prefs.LastInput())
 	msgInput.SetPlaceHolder("White a message...")
 
@@ -44,7 +44,7 @@ func newInputBox(ctx *app.Context, clientGRPC pb.ChatServiceClient, sendBtn *wid
 
 	updateEnableSendBtn(sendBtn, msgInput.Text())
 
-	msgInput.OnChanged = func(text string) {
+	msgInput.OutOnChanged = func(text string) {
 		updateEnableSendBtn(sendBtn, text)
 	}
 

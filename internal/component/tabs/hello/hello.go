@@ -16,10 +16,10 @@ import (
 
 func NewHelloBox(ctx *app.Context) *fyne.Container {
 	input := widget.NewEntry()
-	input.SetPlaceHolder("Введите имя")
+	input.SetPlaceHolder("Enter your name")
 
-	label := widget.NewLabel("Пусто...")
-	button := widget.NewButton("Поздороваться", func() {
+	label := widget.NewLabel("")
+	button := widget.NewButton("Say hello", func() {
 		sendHello(ctx, label, input)
 	})
 

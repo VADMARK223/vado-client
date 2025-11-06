@@ -12,6 +12,7 @@ import (
 	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 	"fyne.io/fyne/v2/data/binding"
+	"fyne.io/fyne/v2/theme"
 	"fyne.io/fyne/v2/widget"
 )
 
@@ -44,7 +45,7 @@ func (t *ChatTab) Canvas() fyne.CanvasObject {
 func New(appCtx *app.Context) tabItem.TabContent {
 	clientGRPC := pb.NewChatServiceClient(appCtx.GRPC)
 
-	infoText := widget.NewRichTextFromMarkdown("Необходимо выполнить вход.")
+	infoText := widget.NewRichTextFromMarkdown("You must log in.")
 	userCountTxt := widget.NewRichTextWithText("")
 	updateCountText(userCountTxt, 0)
 	messages := binding.NewUntypedList()
@@ -111,7 +112,7 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 	updateButtons(appCtx, loginBtn)
 
-	sendBtn := widget.NewButton("Отправить", nil)
+	sendBtn := widget.NewButtonWithIcon("", theme.MailSendIcon(), nil)
 	inputBox := newInputBox(appCtx, clientGRPC, sendBtn)
 
 	scrollWithBtn := container.NewStack(list, container.NewWithoutLayout(scrollDownBtn))
@@ -166,9 +167,9 @@ func New(appCtx *app.Context) tabItem.TabContent {
 
 func updateCountText(txt *widget.RichText, count uint32) {
 	if count == 1 {
-		txt.ParseMarkdown("В комнате пока только вы.")
+		txt.ParseMarkdown("While you are alone in the room.")
 	} else {
-		txt.ParseMarkdown(fmt.Sprintf("В комнате пользователей: **%v**", count))
+		txt.ParseMarkdown(fmt.Sprintf("In the users' room: **%v**", count))
 	}
 }
 

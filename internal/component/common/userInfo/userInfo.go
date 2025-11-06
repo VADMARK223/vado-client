@@ -17,14 +17,14 @@ func NewUserInfo(ctx *app.Context) *fyne.Container {
 		updateUsernameText(ctx.Prefs, usernameTxt)
 	})
 
-	enterBtn := widget.NewButton("Вход", func() {
+	enterBtn := widget.NewButton("Log in", func() {
 		callBack := func(token string) {
 			ctx.Log.Debugw("Create token", "token", token)
 		}
 		ShowLoginDialog(ctx, &callBack)
 	})
 
-	quitBtn := widget.NewButton("Выход", func() {
+	quitBtn := widget.NewButton("Log out", func() {
 		ctx.Prefs.Reset()
 	})
 
@@ -38,11 +38,11 @@ func NewUserInfo(ctx *app.Context) *fyne.Container {
 }
 
 func updateUsernameText(prefs *prefs.Prefs, txt *widget.RichText) {
-	txt.ParseMarkdown(fmt.Sprintf("Пользователь: **%s**", func() string {
+	txt.ParseMarkdown(fmt.Sprintf("User: **%s**", func() string {
 		if prefs.Username() != "" {
 			return prefs.Username()
 		}
-		return "Гость"
+		return "Guest"
 	}()))
 }
 

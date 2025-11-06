@@ -17,22 +17,22 @@ import (
 
 func ShowLoginDialog(ctx *app.Context, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
-	usernameEntry.SetPlaceHolder("Введите логин")
+	usernameEntry.SetPlaceHolder("Enter your username")
 
 	passwordEntry := widget.NewEntry()
 	passwordEntry.Password = true
-	passwordEntry.SetPlaceHolder("Введите пароль")
+	passwordEntry.SetPlaceHolder("Enter your password")
 
 	authClient := pb.NewAuthServiceClient(ctx.GRPC)
 	var dlg dialog.Dialog
-	doneBtn := widget.NewButton("Войти", func() {
+	doneBtn := widget.NewButton("Log in", func() {
 		resp, err := authClient.Login(context.Background(), &pb.LoginRequest{
 			Username: usernameEntry.Text,
 			Password: passwordEntry.Text,
 		})
 
 		if err != nil {
-			dialog.ShowInformation("Ошибка входа", err.Error(), ctx.Win)
+			dialog.ShowInformation("Error token", err.Error(), ctx.Win)
 			return
 		}
 
@@ -51,7 +51,7 @@ func ShowLoginDialog(ctx *app.Context, f *func(token string)) {
 	doneBtn.Importance = widget.HighImportance
 	doneBtn.Disable()
 
-	cancelBtn := widget.NewButton("Отмена", func() {
+	cancelBtn := widget.NewButton("Cancel", func() {
 		dlg.Hide()
 	})
 
@@ -64,13 +64,13 @@ func ShowLoginDialog(ctx *app.Context, f *func(token string)) {
 	}
 
 	form := widget.NewForm(
-		widget.NewFormItem("Логин", usernameEntry),
-		widget.NewFormItem("Пароль", passwordEntry),
+		widget.NewFormItem("Login", usernameEntry),
+		widget.NewFormItem("Password", passwordEntry),
 	)
 
 	content := container.NewVBox(form, container.NewHBox(layout.NewSpacer(), cancelBtn, doneBtn))
 
-	dlg = dialog.NewCustomWithoutButtons("Вход", content, ctx.Win)
+	dlg = dialog.NewCustomWithoutButtons("Log in", content, ctx.Win)
 	dlg.Resize(fyne.NewSize(400, 180))
 	dlg.Show()
 

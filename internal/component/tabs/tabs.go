@@ -17,14 +17,14 @@ func New(ctx *app.Context) *container.AppTabs {
 	factories := map[*container.TabItem]func() tabItem.TabContent{}
 
 	tabs := container.NewAppTabs(
-		tabItem.New("Чат", func() tabItem.TabContent {
+		tabItem.New("Chat", func() tabItem.TabContent {
 			return chatTab.New(ctx)
 		}, factories),
 		container.NewTabItem("SeyHello", hello.NewHelloBox(ctx)),
 		tabItem.New("Kafka", func() tabItem.TabContent {
 			return kafkaTab.New(ctx)
 		}, factories),
-		tabItem.New("Главная", func() tabItem.TabContent {
+		tabItem.New("Main", func() tabItem.TabContent {
 			return mainTab.New(ctx)
 		}, factories),
 	)

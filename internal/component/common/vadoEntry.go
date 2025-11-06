@@ -17,11 +17,10 @@ type VadoEntry struct {
 	clearBtn  *VadoIconButton
 	container *fyne.Container
 
-	OnChanged   func(string)
-	OnSubmitted func(string)
+	OnSubmitted  func(string)
+	OutOnChanged func(string)
 
-	userOnChanged func(string)
-	maxLen        int
+	maxLen int
 }
 
 func NewVadoEntry() *VadoEntry {
@@ -68,8 +67,8 @@ func (e *VadoEntry) internalOnChanged(s string) {
 	} else {
 		e.clearBtn.Enable()
 	}
-	if e.userOnChanged != nil {
-		e.userOnChanged(s)
+	if e.OutOnChanged != nil {
+		e.OutOnChanged(s)
 	}
 }
 

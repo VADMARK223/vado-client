@@ -18,9 +18,9 @@ type VadoIconButton struct {
 	disabled bool
 	hovered  bool
 
-	bg   *canvas.Circle  // фон-индикатор (кружок)
-	img  *canvas.Image   // сама иконка
-	root *fyne.Container // renderer root
+	bg   *canvas.Circle
+	img  *canvas.Image
+	root *fyne.Container
 }
 
 func NewVadoIconButton(icon fyne.Resource, tapped func()) *VadoIconButton {
@@ -31,7 +31,7 @@ func NewVadoIconButton(icon fyne.Resource, tapped func()) *VadoIconButton {
 
 func (b *VadoIconButton) CreateRenderer() fyne.WidgetRenderer {
 	// фон
-	b.bg = canvas.NewCircle(color.NRGBA{0, 0, 0, 0}) // прозрачный по умолчанию
+	b.bg = canvas.NewCircle(color.NRGBA{}) // прозрачный по умолчанию
 	b.bg.StrokeWidth = 0
 
 	// иконка
@@ -92,15 +92,15 @@ func (b *VadoIconButton) updateVisualState() {
 	case b.disabled:
 		// тусклая иконка, еле заметный фон
 		b.img.Translucency = 0.5
-		b.bg.FillColor = color.NRGBA{0, 0, 0, 0} // без подсветки
+		b.bg.FillColor = color.NRGBA{} // без подсветки
 	case b.hovered:
 		// яркая иконка, мягкий серый круг
 		b.img.Translucency = 0.0
-		b.bg.FillColor = color.NRGBA{220, 220, 220, 80}
+		b.bg.FillColor = color.NRGBA{R: 220, G: 220, B: 220, A: 80}
 	default:
 		// нормальное состояние
 		b.img.Translucency = 0.0
-		b.bg.FillColor = color.NRGBA{0, 0, 0, 0}
+		b.bg.FillColor = color.NRGBA{}
 	}
 
 	canvas.Refresh(b.bg)

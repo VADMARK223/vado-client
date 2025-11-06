@@ -19,7 +19,7 @@ type Tab struct {
 
 func New(ctx *app.Context) tabItem.TabContent {
 	c := container.NewVBox(
-		widget.NewLabel("Главная страница"),
+		widget.NewLabel("Main page"),
 		userInfo.NewUserInfo(ctx),
 	)
 
