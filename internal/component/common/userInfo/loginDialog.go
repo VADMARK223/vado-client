@@ -17,7 +17,7 @@ import (
 
 func ShowLoginDialog(ctx *app.Context, f *func(token string)) {
 	usernameEntry := widget.NewEntry()
-	usernameEntry.SetPlaceHolder("Enter your username")
+	usernameEntry.SetPlaceHolder("Enter your login")
 
 	passwordEntry := widget.NewEntry()
 	passwordEntry.Password = true
